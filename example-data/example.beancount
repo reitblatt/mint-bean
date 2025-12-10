@@ -1,0 +1,346 @@
+; Example Beancount File for MintBean Testing
+; This file demonstrates typical personal finance transactions
+; that you can use to test the MintBean application.
+
+option "title" "Example Personal Finance"
+option "operating_currency" "USD"
+
+; ============================================================================
+; Account Declarations
+; ============================================================================
+
+; Assets (Bank Accounts, Credit Cards)
+1900-01-01 open Assets:Bank:Chase:Checking                    USD
+1900-01-01 open Assets:Bank:Chase:Savings                     USD
+1900-01-01 open Assets:Bank:BoA:Checking                      USD
+1900-01-01 open Assets:CreditCard:Chase:Sapphire              USD
+1900-01-01 open Assets:CreditCard:Amex:BlueCash              USD
+1900-01-01 open Assets:Investment:Vanguard:Taxable           USD
+1900-01-01 open Assets:Cash:Wallet                           USD
+
+; Liabilities
+1900-01-01 open Liabilities:CreditCard:Chase:Sapphire        USD
+1900-01-01 open Liabilities:CreditCard:Amex:BlueCash        USD
+
+; Income
+1900-01-01 open Income:Salary:TechCorp                       USD
+1900-01-01 open Income:Bonus                                 USD
+1900-01-01 open Income:Interest:Savings                      USD
+1900-01-01 open Income:Dividends                             USD
+1900-01-01 open Income:Other                                 USD
+
+; Expenses - Food
+1900-01-01 open Expenses:Food:Groceries                      USD
+1900-01-01 open Expenses:Food:Restaurant                     USD
+1900-01-01 open Expenses:Food:Coffee                         USD
+
+; Expenses - Housing
+1900-01-01 open Expenses:Housing:Rent                        USD
+1900-01-01 open Expenses:Housing:Utilities:Electric          USD
+1900-01-01 open Expenses:Housing:Utilities:Water             USD
+1900-01-01 open Expenses:Housing:Utilities:Internet          USD
+1900-01-01 open Expenses:Housing:Insurance                   USD
+
+; Expenses - Transportation
+1900-01-01 open Expenses:Transport:Gas                       USD
+1900-01-01 open Expenses:Transport:Parking                   USD
+1900-01-01 open Expenses:Transport:Uber                      USD
+1900-01-01 open Expenses:Transport:Insurance                 USD
+
+; Expenses - Shopping
+1900-01-01 open Expenses:Shopping:Clothing                   USD
+1900-01-01 open Expenses:Shopping:Electronics                USD
+1900-01-01 open Expenses:Shopping:Online                     USD
+
+; Expenses - Entertainment
+1900-01-01 open Expenses:Entertainment:Streaming             USD
+1900-01-01 open Expenses:Entertainment:Movies                USD
+1900-01-01 open Expenses:Entertainment:Hobbies               USD
+
+; Expenses - Health
+1900-01-01 open Expenses:Health:Insurance                    USD
+1900-01-01 open Expenses:Health:Pharmacy                     USD
+1900-01-01 open Expenses:Health:Doctor                       USD
+1900-01-01 open Expenses:Health:Gym                          USD
+
+; Expenses - Other
+1900-01-01 open Expenses:Taxes:Federal                       USD
+1900-01-01 open Expenses:Taxes:State                         USD
+1900-01-01 open Expenses:Fees:BankFees                       USD
+1900-01-01 open Expenses:Donations                           USD
+1900-01-01 open Expenses:Subscriptions                       USD
+
+; Equity
+1900-01-01 open Equity:Opening-Balances
+
+; ============================================================================
+; Opening Balances (Start of 2024)
+; ============================================================================
+
+2024-01-01 * "Opening Balance" "Chase Checking"
+  Assets:Bank:Chase:Checking                    5000.00 USD
+  Equity:Opening-Balances
+
+2024-01-01 * "Opening Balance" "Chase Savings"
+  Assets:Bank:Chase:Savings                     10000.00 USD
+  Equity:Opening-Balances
+
+2024-01-01 * "Opening Balance" "BofA Checking"
+  Assets:Bank:BoA:Checking                      2000.00 USD
+  Equity:Opening-Balances
+
+2024-01-01 * "Opening Balance" "Chase Sapphire Credit Card"
+  Liabilities:CreditCard:Chase:Sapphire         -500.00 USD
+  Equity:Opening-Balances
+
+; ============================================================================
+; January 2024 Transactions
+; ============================================================================
+
+2024-01-01 * "TechCorp" "Salary - January"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-01-02 * "Landlord" "Rent for January" #rent
+  Assets:Bank:Chase:Checking                   -2200.00 USD
+  Expenses:Housing:Rent                         2200.00 USD
+
+2024-01-03 * "Whole Foods" "Weekly groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -87.43 USD
+  Expenses:Food:Groceries                        87.43 USD
+
+2024-01-04 * "Starbucks" "Morning coffee"
+  Liabilities:CreditCard:Chase:Sapphire          -5.75 USD
+  Expenses:Food:Coffee                            5.75 USD
+
+2024-01-05 * "Shell Gas Station" "Fill up tank"
+  Liabilities:CreditCard:Chase:Sapphire         -52.30 USD
+  Expenses:Transport:Gas                         52.30 USD
+
+2024-01-07 * "Netflix" "Monthly subscription" #subscription
+  Liabilities:CreditCard:Chase:Sapphire         -15.99 USD
+  Expenses:Entertainment:Streaming               15.99 USD
+
+2024-01-08 * "Chipotle" "Lunch"
+  Liabilities:CreditCard:Chase:Sapphire         -12.85 USD
+  Expenses:Food:Restaurant                       12.85 USD
+
+2024-01-10 * "Target" "Household supplies"
+  Liabilities:CreditCard:Chase:Sapphire        -145.67 USD
+  Expenses:Shopping:Online                      145.67 USD
+
+2024-01-12 * "PG&E" "Electric bill"
+  Assets:Bank:Chase:Checking                    -85.23 USD
+  Expenses:Housing:Utilities:Electric            85.23 USD
+
+2024-01-13 * "Trader Joe's" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -62.34 USD
+  Expenses:Food:Groceries                        62.34 USD
+
+2024-01-15 * "TechCorp" "Salary - Mid-month"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-01-16 * "Amazon" "Books and electronics"
+  Liabilities:CreditCard:Chase:Sapphire        -234.56 USD
+  Expenses:Shopping:Online                      234.56 USD
+
+2024-01-18 * "Uber" "Ride to airport"
+  Liabilities:CreditCard:Chase:Sapphire         -42.00 USD
+  Expenses:Transport:Uber                        42.00 USD
+
+2024-01-19 * "AT&T" "Internet bill" #bills
+  Assets:Bank:Chase:Checking                    -70.00 USD
+  Expenses:Housing:Utilities:Internet            70.00 USD
+
+2024-01-20 * "Safeway" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -95.21 USD
+  Expenses:Food:Groceries                        95.21 USD
+
+2024-01-22 * "AMC Theatres" "Movie tickets"
+  Liabilities:CreditCard:Chase:Sapphire         -32.00 USD
+  Expenses:Entertainment:Movies                  32.00 USD
+
+2024-01-23 * "Chase Bank" "Credit card payment"
+  Assets:Bank:Chase:Checking                   -800.00 USD
+  Liabilities:CreditCard:Chase:Sapphire         800.00 USD
+
+2024-01-25 * "Costco" "Bulk groceries" #groceries
+  Liabilities:CreditCard:Amex:BlueCash         -187.92 USD
+  Expenses:Food:Groceries                       187.92 USD
+
+2024-01-26 * "Blue Bottle Coffee" "Coffee and pastry"
+  Liabilities:CreditCard:Chase:Sapphire          -8.50 USD
+  Expenses:Food:Coffee                            8.50 USD
+
+2024-01-28 * "CVS Pharmacy" "Prescriptions"
+  Liabilities:CreditCard:Chase:Sapphire         -25.00 USD
+  Expenses:Health:Pharmacy                       25.00 USD
+
+2024-01-30 * "24 Hour Fitness" "Monthly gym membership" #subscription
+  Assets:Bank:Chase:Checking                    -45.00 USD
+  Expenses:Health:Gym                            45.00 USD
+
+2024-01-31 * "Chase Bank" "Savings account interest"
+  Assets:Bank:Chase:Savings                       8.50 USD
+  Income:Interest:Savings                        -8.50 USD
+
+; ============================================================================
+; February 2024 Transactions
+; ============================================================================
+
+2024-02-01 * "TechCorp" "Salary - February"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-02-01 * "Landlord" "Rent for February" #rent
+  Assets:Bank:Chase:Checking                   -2200.00 USD
+  Expenses:Housing:Rent                         2200.00 USD
+
+2024-02-03 * "Whole Foods" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -92.15 USD
+  Expenses:Food:Groceries                        92.15 USD
+
+2024-02-05 * "Starbucks" "Coffee"
+  Liabilities:CreditCard:Chase:Sapphire          -6.25 USD
+  Expenses:Food:Coffee                            6.25 USD
+
+2024-02-06 * "Shell" "Gas" #gas
+  Liabilities:CreditCard:Chase:Sapphire         -48.90 USD
+  Expenses:Transport:Gas                         48.90 USD
+
+2024-02-08 * "Spotify" "Premium subscription" #subscription
+  Liabilities:CreditCard:Chase:Sapphire         -10.99 USD
+  Expenses:Entertainment:Streaming               10.99 USD
+
+2024-02-10 * "Sweetgreen" "Healthy lunch"
+  Liabilities:CreditCard:Chase:Sapphire         -16.50 USD
+  Expenses:Food:Restaurant                       16.50 USD
+
+2024-02-12 * "PG&E" "Electric bill" #bills
+  Assets:Bank:Chase:Checking                    -92.18 USD
+  Expenses:Housing:Utilities:Electric            92.18 USD
+
+2024-02-14 * "The French Laundry" "Valentine's Day dinner"
+  Liabilities:CreditCard:Chase:Sapphire        -285.00 USD
+  Expenses:Food:Restaurant                      285.00 USD
+
+2024-02-15 * "TechCorp" "Salary - Mid-month"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-02-16 * "REI" "Camping gear"
+  Liabilities:CreditCard:Chase:Sapphire        -345.67 USD
+  Expenses:Entertainment:Hobbies                345.67 USD
+
+2024-02-18 * "Trader Joe's" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -71.23 USD
+  Expenses:Food:Groceries                        71.23 USD
+
+2024-02-20 * "AT&T" "Internet" #bills
+  Assets:Bank:Chase:Checking                    -70.00 USD
+  Expenses:Housing:Utilities:Internet            70.00 USD
+
+2024-02-22 * "Amazon" "Books"
+  Liabilities:CreditCard:Chase:Sapphire         -42.99 USD
+  Expenses:Shopping:Online                       42.99 USD
+
+2024-02-23 * "Chase Bank" "Credit card payment"
+  Assets:Bank:Chase:Checking                  -1200.00 USD
+  Liabilities:CreditCard:Chase:Sapphire        1200.00 USD
+
+2024-02-25 * "Costco" "Bulk shopping" #groceries
+  Liabilities:CreditCard:Amex:BlueCash         -156.78 USD
+  Expenses:Food:Groceries                       156.78 USD
+
+2024-02-27 * "Uber" "Ride home"
+  Liabilities:CreditCard:Chase:Sapphire         -18.50 USD
+  Expenses:Transport:Uber                        18.50 USD
+
+2024-02-28 * "Blue Shield" "Health insurance premium" #bills
+  Assets:Bank:Chase:Checking                   -450.00 USD
+  Expenses:Health:Insurance                     450.00 USD
+
+; ============================================================================
+; March 2024 Transactions
+; ============================================================================
+
+2024-03-01 * "TechCorp" "Salary - March"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-03-01 * "TechCorp" "Annual bonus"
+  Assets:Bank:Chase:Checking                    5000.00 USD
+  Income:Bonus                                 -5000.00 USD
+
+2024-03-01 * "Landlord" "Rent for March" #rent
+  Assets:Bank:Chase:Checking                   -2200.00 USD
+  Expenses:Housing:Rent                         2200.00 USD
+
+2024-03-02 * "Transfer" "Moving to savings"
+  Assets:Bank:Chase:Checking                   -3000.00 USD
+  Assets:Bank:Chase:Savings                     3000.00 USD
+
+2024-03-05 * "Whole Foods" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -88.76 USD
+  Expenses:Food:Groceries                        88.76 USD
+
+2024-03-07 * "Apple Store" "New AirPods"
+  Liabilities:CreditCard:Chase:Sapphire        -249.00 USD
+  Expenses:Shopping:Electronics                 249.00 USD
+
+2024-03-10 * "Safeway" "Weekly groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -76.54 USD
+  Expenses:Food:Groceries                        76.54 USD
+
+2024-03-12 * "PG&E" "Electric bill" #bills
+  Assets:Bank:Chase:Checking                    -78.45 USD
+  Expenses:Housing:Utilities:Electric            78.45 USD
+
+2024-03-15 * "TechCorp" "Salary - Mid-month"
+  Assets:Bank:Chase:Checking                    6500.00 USD
+  Income:Salary:TechCorp                       -6500.00 USD
+
+2024-03-16 * "Nordstrom" "Spring wardrobe"
+  Liabilities:CreditCard:Chase:Sapphire        -456.89 USD
+  Expenses:Shopping:Clothing                    456.89 USD
+
+2024-03-18 * "Trader Joe's" "Groceries" #groceries
+  Liabilities:CreditCard:Chase:Sapphire         -65.43 USD
+  Expenses:Food:Groceries                        65.43 USD
+
+2024-03-20 * "AT&T" "Internet" #bills
+  Assets:Bank:Chase:Checking                    -70.00 USD
+  Expenses:Housing:Utilities:Internet            70.00 USD
+
+2024-03-22 * "American Red Cross" "Donation" ^donation
+  Assets:Bank:Chase:Checking                   -100.00 USD
+  Expenses:Donations                            100.00 USD
+
+2024-03-23 * "Chase Bank" "Credit card payment"
+  Assets:Bank:Chase:Checking                  -1000.00 USD
+  Liabilities:CreditCard:Chase:Sapphire        1000.00 USD
+
+2024-03-25 * "Chevron" "Gas" #gas
+  Liabilities:CreditCard:Chase:Sapphire         -55.20 USD
+  Expenses:Transport:Gas                         55.20 USD
+
+2024-03-27 * "Sushi Restaurant" "Dinner with friends"
+  Liabilities:CreditCard:Chase:Sapphire         -92.00 USD
+  Expenses:Food:Restaurant                       92.00 USD
+
+2024-03-28 * "24 Hour Fitness" "Gym membership" #subscription
+  Assets:Bank:Chase:Checking                    -45.00 USD
+  Expenses:Health:Gym                            45.00 USD
+
+2024-03-31 * "Chase Bank" "Savings interest"
+  Assets:Bank:Chase:Savings                      11.25 USD
+  Income:Interest:Savings                       -11.25 USD
+
+; ============================================================================
+; Balance Assertions (verify account balances)
+; ============================================================================
+
+; Note: Remove or adjust these balance assertions based on actual calculated balances
+; 2024-03-31 balance Assets:Bank:Chase:Checking      XXXX.XX USD
+; 2024-03-31 balance Assets:Bank:Chase:Savings       XXXX.XX USD
