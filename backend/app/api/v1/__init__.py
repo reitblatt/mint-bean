@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import transactions, accounts, categories, rules
+from app.api.v1 import transactions, accounts, categories, rules, plaid
 
 api_router = APIRouter()
 
@@ -28,4 +28,10 @@ api_router.include_router(
     rules.router,
     prefix="/rules",
     tags=["rules"]
+)
+
+api_router.include_router(
+    plaid.router,
+    prefix="/plaid",
+    tags=["plaid"]
 )

@@ -52,6 +52,17 @@ class Transaction(Base):
     # Original data from Plaid (JSON)
     raw_data = Column(Text, nullable=True)
 
+    @property
+    def beancount_flag(self) -> str:
+        """
+        Get the appropriate beancount flag for this transaction.
+
+        Returns:
+            '!' for pending transactions (not yet cleared)
+            '*' for completed/cleared transactions
+        """
+        return '!' if self.pending else '*'
+
     def __repr__(self) -> str:
         """String representation of transaction."""
         return f"<Transaction {self.transaction_id}: {self.description} - ${self.amount}>"

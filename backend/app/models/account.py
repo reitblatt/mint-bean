@@ -38,7 +38,7 @@ class Account(Base):
     currency = Column(String(10), default="USD", nullable=False)
 
     # Status
-    active = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
     needs_reconnection = Column(Boolean, default=False, nullable=False)
 
     # Timestamps
