@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import transactions, accounts, categories, rules, plaid
+from app.api.v1 import accounts, categories, plaid, rules, transactions
 
 api_router = APIRouter()
 

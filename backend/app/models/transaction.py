@@ -1,8 +1,8 @@
 """Transaction model."""
 
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base

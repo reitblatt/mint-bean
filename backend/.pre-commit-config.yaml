@@ -1,0 +1,25 @@
+# Pre-commit hooks configuration
+repos:
+  # Python code formatting with black
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.13
+
+  # Python linting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  # Run tests before commit
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: bash -c 'cd backend && source venv/bin/activate && pytest'
+        language: system
+        pass_filenames: false
+        always_run: true

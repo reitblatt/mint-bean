@@ -1,8 +1,9 @@
 """Transaction schemas."""
 
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class TransactionBase(BaseModel):
@@ -25,8 +26,8 @@ class TransactionCreate(TransactionBase):
     category_id: Optional[int] = None
     beancount_account: Optional[str] = None
     plaid_transaction_id: Optional[str] = None
-    tags: Optional[List[str]] = None
-    links: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
+    links: Optional[list[str]] = None
 
 
 class TransactionUpdate(BaseModel):
@@ -41,8 +42,8 @@ class TransactionUpdate(BaseModel):
     beancount_account: Optional[str] = None
     pending: Optional[bool] = None
     reviewed: Optional[bool] = None
-    tags: Optional[List[str]] = None
-    links: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
+    links: Optional[list[str]] = None
 
 
 class TransactionResponse(TransactionBase):
@@ -57,6 +58,7 @@ class TransactionResponse(TransactionBase):
     beancount_account: Optional[str] = None
     plaid_transaction_id: Optional[str] = None
     synced_to_beancount: bool = False
+    beancount_flag: str
     created_at: datetime
     updated_at: datetime
 
@@ -64,7 +66,7 @@ class TransactionResponse(TransactionBase):
 class TransactionListResponse(BaseModel):
     """Schema for paginated transaction list response."""
 
-    transactions: List[TransactionResponse]
+    transactions: list[TransactionResponse]
     total: int
     page: int
     page_size: int

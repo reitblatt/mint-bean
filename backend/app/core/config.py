@@ -1,6 +1,6 @@
 """Application configuration."""
 
-from typing import List
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     @property
-    def BACKEND_CORS_ORIGINS(self) -> List[str]:
+    def BACKEND_CORS_ORIGINS(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 

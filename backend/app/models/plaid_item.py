@@ -1,7 +1,9 @@
 """Plaid Item model for storing Plaid access tokens and metadata."""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+
 from app.core.database import Base
 
 

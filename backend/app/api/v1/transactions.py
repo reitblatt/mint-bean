@@ -1,6 +1,7 @@
 """Transaction API endpoints."""
 
-from typing import List, Optional
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -8,9 +9,9 @@ from app.core.database import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import (
     TransactionCreate,
-    TransactionUpdate,
-    TransactionResponse,
     TransactionListResponse,
+    TransactionResponse,
+    TransactionUpdate,
 )
 
 router = APIRouter()
@@ -57,8 +58,8 @@ def list_transactions(
     if search:
         search_filter = f"%{search}%"
         query = query.filter(
-            (Transaction.description.ilike(search_filter)) |
-            (Transaction.payee.ilike(search_filter))
+            (Transaction.description.ilike(search_filter))
+            | (Transaction.payee.ilike(search_filter))
         )
 
     # Get total count
@@ -115,14 +116,19 @@ def create_transaction(
     Returns:
         Created transaction
     """
+    # Validate account exists
+    from app.models.account import Account
+
+    account = db.query(Account).filter(Account.id == transaction.account_id).first()
+    if not account:
+        raise HTTPException(status_code=400, detail="Account not found")
+
     # Generate transaction ID
     import uuid
+
     transaction_id = f"txn_{uuid.uuid4().hex[:12]}"
 
-    db_transaction = Transaction(
-        transaction_id=transaction_id,
-        **transaction.model_dump()
-    )
+    db_transaction = Transaction(transaction_id=transaction_id, **transaction.model_dump())
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)

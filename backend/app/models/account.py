@@ -1,7 +1,8 @@
 """Account model."""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base

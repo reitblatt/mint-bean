@@ -1,11 +1,12 @@
 """Rule engine for transaction categorization."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
+
 from sqlalchemy.orm import Session
 
-from app.models.transaction import Transaction
-from app.models.rule import Rule
 from app.core.logging import get_logger
+from app.models.rule import Rule
+from app.models.transaction import Transaction
 
 logger = get_logger(__name__)
 
@@ -22,7 +23,7 @@ class RuleEngine:
         """
         self.db = db
 
-    def apply_rules(self, transaction: Transaction) -> Optional[Dict[str, Any]]:
+    def apply_rules(self, transaction: Transaction) -> Optional[dict[str, Any]]:
         """
         Apply rules to a transaction.
 
@@ -93,7 +94,7 @@ class RuleEngine:
 
         return False
 
-    def _parse_actions(self, actions_json: str) -> Dict[str, Any]:
+    def _parse_actions(self, actions_json: str) -> dict[str, Any]:
         """
         Parse rule actions from JSON.
 
@@ -110,7 +111,7 @@ class RuleEngine:
         import json
         return json.loads(actions_json)
 
-    def apply_rules_bulk(self, transactions: List[Transaction]) -> Dict[str, int]:
+    def apply_rules_bulk(self, transactions: list[Transaction]) -> dict[str, int]:
         """
         Apply rules to multiple transactions.
 

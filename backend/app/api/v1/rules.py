@@ -1,21 +1,21 @@
 """Rule API endpoints."""
 
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.rule import Rule
-from app.schemas.rule import RuleCreate, RuleUpdate, RuleResponse
+from app.schemas.rule import RuleCreate, RuleResponse, RuleUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[RuleResponse])
+@router.get("/", response_model=list[RuleResponse])
 def list_rules(
     active_only: bool = True,
     db: Session = Depends(get_db),
-) -> List[Rule]:
+) -> list[Rule]:
     """
     List all rules.
 

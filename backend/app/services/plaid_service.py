@@ -2,22 +2,21 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
-from sqlalchemy.orm import Session
 
 import plaid
 from plaid.api import plaid_api
 from plaid.model.country_code import CountryCode
-from plaid.model.products import Products
+from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
+from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
-from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+from plaid.model.products import Products
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
-from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.plaid_item import PlaidItem
 from app.models.account import Account
+from app.models.plaid_item import PlaidItem
 from app.models.transaction import Transaction
 
 logger = logging.getLogger(__name__)
@@ -52,7 +51,7 @@ class PlaidService:
         self.client = plaid_api.PlaidApi(api_client)
         logger.info(f"Plaid client initialized for environment: {settings.PLAID_ENV}")
 
-    def create_link_token(self, user_id: str = "user-1") -> Dict:
+    def create_link_token(self, user_id: str = "user-1") -> dict:
         """
         Create a link token for Plaid Link.
 
@@ -155,7 +154,7 @@ class PlaidService:
             logger.error(f"Error exchanging public token: {e}")
             raise
 
-    def get_accounts(self, plaid_item: PlaidItem, db: Session) -> List[Account]:
+    def get_accounts(self, plaid_item: PlaidItem, db: Session) -> list[Account]:
         """
         Fetch accounts from Plaid and sync to database.
 
@@ -222,7 +221,7 @@ class PlaidService:
 
     def sync_transactions(
         self, plaid_item: PlaidItem, db: Session
-    ) -> Tuple[int, int, int, str]:
+    ) -> tuple[int, int, int, str]:
         """
         Sync transactions from Plaid using the transactions/sync endpoint.
 

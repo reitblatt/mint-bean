@@ -1,21 +1,21 @@
 """Category API endpoints."""
 
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.category import Category
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("/", response_model=list[CategoryResponse])
 def list_categories(
     category_type: str = None,
     db: Session = Depends(get_db),
-) -> List[Category]:
+) -> list[Category]:
     """
     List all categories.
 

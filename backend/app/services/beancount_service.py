@@ -1,9 +1,9 @@
 """Beancount file parsing and writing service."""
 
-from typing import List, Dict, Any, Optional
+import hashlib
 from datetime import datetime
 from pathlib import Path
-import hashlib
+from typing import Any, Optional
 
 try:
     from beancount import loader
@@ -31,7 +31,7 @@ class BeancountService:
         self.file_path = file_path or settings.BEANCOUNT_FILE_PATH
         self.repo_path = settings.BEANCOUNT_REPO_PATH
 
-    def parse_transactions(self) -> List[Dict[str, Any]]:
+    def parse_transactions(self) -> list[dict[str, Any]]:
         """
         Parse transactions from beancount file.
 
@@ -125,7 +125,7 @@ class BeancountService:
             logger.error(f"Error parsing beancount file: {e}")
             return []
 
-    def parse_accounts(self) -> List[Dict[str, Any]]:
+    def parse_accounts(self) -> list[dict[str, Any]]:
         """
         Parse account declarations from beancount file.
 
@@ -198,10 +198,10 @@ class BeancountService:
         date: datetime,
         payee: str,
         narration: str,
-        postings: List[Dict[str, Any]],
-        tags: Optional[List[str]] = None,
-        links: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        postings: list[dict[str, Any]],
+        tags: Optional[list[str]] = None,
+        links: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> bool:
         """
         Write a transaction to the beancount file.
@@ -231,7 +231,7 @@ class BeancountService:
     def update_transaction(
         self,
         transaction_id: str,
-        updates: Dict[str, Any]
+        updates: dict[str, Any]
     ) -> bool:
         """
         Update an existing transaction in the beancount file.
@@ -254,7 +254,7 @@ class BeancountService:
         # TODO: Implement actual updating
         return True
 
-    def sync_from_file(self) -> Dict[str, int]:
+    def sync_from_file(self) -> dict[str, int]:
         """
         Sync transactions from beancount file to database.
 
@@ -272,7 +272,7 @@ class BeancountService:
         # TODO: Implement actual syncing
         return {"added": 0, "updated": 0, "unchanged": 0}
 
-    def sync_to_file(self) -> Dict[str, int]:
+    def sync_to_file(self) -> dict[str, int]:
         """
         Sync transactions from database to beancount file.
 
@@ -289,7 +289,7 @@ class BeancountService:
         # TODO: Implement actual syncing
         return {"synced": 0, "failed": 0}
 
-    def validate_file(self) -> Dict[str, Any]:
+    def validate_file(self) -> dict[str, Any]:
         """
         Validate beancount file syntax and balance.
 

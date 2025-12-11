@@ -1,21 +1,21 @@
 """Account API endpoints."""
 
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.account import Account
-from app.schemas.account import AccountCreate, AccountUpdate, AccountResponse
+from app.schemas.account import AccountCreate, AccountResponse, AccountUpdate
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[AccountResponse])
+@router.get("/", response_model=list[AccountResponse])
 def list_accounts(
     active_only: bool = True,
     db: Session = Depends(get_db),
-) -> List[Account]:
+) -> list[Account]:
     """
     List all accounts.
 
@@ -28,7 +28,7 @@ def list_accounts(
     """
     query = db.query(Account)
     if active_only:
-        query = query.filter(Account.active == True)
+        query = query.filter(Account.is_active)
     return query.all()
 
 
@@ -70,12 +70,10 @@ def create_account(
     """
     # Generate account ID
     import uuid
+
     account_id = f"acc_{uuid.uuid4().hex[:12]}"
 
-    db_account = Account(
-        account_id=account_id,
-        **account.model_dump()
-    )
+    db_account = Account(account_id=account_id, **account.model_dump())
     db.add(db_account)
     db.commit()
     db.refresh(db_account)

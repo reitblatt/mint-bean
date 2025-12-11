@@ -11,11 +11,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sqlalchemy.orm import Session
-from app.core.database import engine, SessionLocal
-from app.core.config import settings
-from app.models.transaction import Transaction
+
+from app.core.database import SessionLocal
 from app.models.account import Account
 from app.models.category import Category
+from app.models.transaction import Transaction
 from app.services.beancount_service import BeancountService
 
 
@@ -190,7 +190,7 @@ def import_transactions():
 
         db.commit()
 
-        print(f"\n✅ Import complete!")
+        print("\n✅ Import complete!")
         print(f"   Imported: {imported} transactions")
         print(f"   Skipped (duplicates): {skipped} transactions")
         print(f"   Total in file: {len(transactions_data)} transactions")

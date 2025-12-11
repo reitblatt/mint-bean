@@ -1,7 +1,8 @@
 """Rule schemas."""
 
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -10,8 +11,8 @@ class RuleBase(BaseModel):
 
     name: str
     description: Optional[str] = None
-    conditions: Dict[str, Any]
-    actions: Dict[str, Any]
+    conditions: dict[str, Any]
+    actions: dict[str, Any]
     priority: int = 0
     active: bool = True
 
@@ -27,8 +28,8 @@ class RuleUpdate(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    conditions: Optional[Dict[str, Any]] = None
-    actions: Optional[Dict[str, Any]] = None
+    conditions: Optional[dict[str, Any]] = None
+    actions: Optional[dict[str, Any]] = None
     category_id: Optional[int] = None
     priority: Optional[int] = None
     active: Optional[bool] = None

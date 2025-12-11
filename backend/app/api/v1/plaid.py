@@ -8,9 +8,9 @@ from app.models.plaid_item import PlaidItem
 from app.schemas.plaid_item import (
     LinkTokenCreateRequest,
     LinkTokenCreateResponse,
+    PlaidItemResponse,
     PublicTokenExchangeRequest,
     PublicTokenExchangeResponse,
-    PlaidItemResponse,
     TransactionsSyncResponse,
 )
 from app.services.plaid_service import plaid_service
