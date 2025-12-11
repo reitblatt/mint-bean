@@ -4,6 +4,41 @@ Prioritized list of tasks for MintBean development.
 
 ## Priority 1: Core Functionality (Implement First)
 
+### 1.0 Recent Improvements & New Tasks
+
+#### Code Quality & Linting
+- [ ] Address ruff linting warnings (101 remaining)
+  - [ ] Update type annotations to use Python 3.10+ syntax (`X | Y` instead of `Optional[X]`)
+  - [ ] Add proper exception chaining (`raise ... from err`)
+  - [ ] Fix comparison operators (`cond` instead of `cond == True`)
+  - [ ] Reorganize imports in scripts
+  - [ ] Remove unused variables
+
+#### Database Migrations
+- [ ] Set up Alembic for database migrations
+  - [ ] Initialize Alembic
+  - [ ] Create initial migration
+  - [ ] Add migration for Account.is_active rename
+  - [ ] Document migration process
+
+#### Additional Testing
+- [ ] Add BeancountService tests
+  - [ ] Unit tests for parsing methods
+  - [ ] Unit tests for writing methods
+  - [ ] Integration tests with sample beancount files
+  - [ ] Error handling tests
+- [ ] Add frontend tests
+  - [ ] Component tests for PlaidLink
+  - [ ] Component tests for TransactionDetailModal
+  - [ ] Component tests for TransactionFilters
+  - [ ] Integration tests for transaction workflows
+
+#### Documentation
+- [ ] Expand PENDING_TRANSACTIONS.md with edge cases
+- [ ] Add API documentation with examples
+- [ ] Create setup guide for Plaid sandbox
+- [ ] Document test data and fixtures
+
 ### 1.1 Beancount Integration
 
 - [ ] Implement `BeancountService.parse_transactions()`
@@ -51,58 +86,65 @@ Prioritized list of tasks for MintBean development.
   - Generate commit messages
   - Handle git errors
 
-### 1.2 Plaid Integration
+### 1.2 Plaid Integration ✅ COMPLETED
 
-- [ ] Implement `PlaidService.__init__()`
+- [x] Implement `PlaidService.__init__()`
   - Initialize Plaid client
   - Load credentials from settings
   - Handle different environments
 
-- [ ] Implement `PlaidService.create_link_token()`
+- [x] Implement `PlaidService.create_link_token()`
   - Generate link tokens for frontend
   - Configure products
   - Set redirect URIs
 
-- [ ] Implement `PlaidService.exchange_public_token()`
+- [x] Implement `PlaidService.exchange_public_token()`
   - Exchange public token for access token
   - Store access token securely
   - Create item record
 
-- [ ] Implement `PlaidService.get_accounts()`
+- [x] Implement `PlaidService.get_accounts()`
   - Fetch account details
   - Extract balances
   - Map to internal models
 
-- [ ] Implement `PlaidService.sync_transactions()`
+- [x] Implement `PlaidService.sync_transactions()`
   - Use transactions sync endpoint
   - Handle added/modified/removed
   - Update cursor
   - Store in database
+  - Handle pending → completed transitions
 
-- [ ] Implement `PlaidService.get_institution()`
+- [x] Implement `PlaidService.get_institution()`
   - Fetch institution details
   - Cache institution data
   - Extract logo and name
 
-- [ ] Add Plaid Link UI component
+- [x] Add Plaid Link UI component
   - Integrate Plaid Link in frontend
   - Handle success/exit callbacks
   - Store access token
 
-- [ ] Add error handling
+- [x] Add error handling
   - Handle item errors (needs reconnection)
   - Handle rate limits
   - Retry logic
 
-### 1.3 Transaction Categorization UI
+- [x] Add pending transaction handling
+  - Track pending transactions with `!` flag
+  - Update to completed with `*` flag
+  - Prevent duplicates using plaid_transaction_id
 
-- [ ] Create transaction detail modal
+### 1.3 Transaction Categorization UI (Partially Completed)
+
+- [x] Create transaction detail modal
   - Display full transaction details
   - Show/edit category
   - Show/edit tags and links
   - Show original Plaid data
+  - Quick "mark as reviewed" checkbox
 
-- [ ] Add category selector component
+- [x] Add category selector component
   - Dropdown with all categories
   - Search/filter categories
   - Show hierarchy
@@ -114,12 +156,13 @@ Prioritized list of tasks for MintBean development.
   - Bulk mark as reviewed
   - Bulk delete
 
-- [ ] Add transaction filters UI
-  - Date range picker
+- [x] Add transaction filters UI
+  - Date range picker with presets
   - Account filter
   - Category filter
   - Amount range
   - Pending/reviewed status
+  - Inline collapsible filter panel
 
 - [ ] Add transaction search
   - Full-text search in description/payee
@@ -419,22 +462,37 @@ Prioritized list of tasks for MintBean development.
 
 ## Technical Debt & Improvements
 
-### Testing
+### Testing ✅ COMPLETED (Backend)
 
-- [ ] Write backend unit tests
-  - Service layer tests
-  - API endpoint tests
-  - Database tests
+- [x] Write backend unit tests
+  - PlaidService unit tests (49 tests total)
+  - API endpoint tests with mocking
+  - Transaction workflow tests
+  - Database tests with in-memory SQLite
+  - Pending transaction lifecycle tests
+
+- [x] Set up pre-commit hooks
+  - Black code formatting
+  - Ruff linting
+  - Pytest test execution
+  - Automatic code quality checks
+
+- [x] Set up CI/CD
+  - GitHub Actions workflow
+  - Automated testing on push/PR
+  - Code coverage reports (codecov)
+  - Python 3.13 support
+  - Frontend build tests
 
 - [ ] Add frontend tests
-  - Component tests
+  - Component tests with React Testing Library
   - Integration tests
   - E2E tests with Playwright
 
-- [ ] Set up CI/CD
-  - Automated testing
-  - Code coverage reports
-  - Automated deployment
+- [ ] Add BeancountService tests
+  - Unit tests for all methods
+  - Integration tests with sample files
+  - Error handling tests
 
 ### Performance
 
@@ -506,20 +564,78 @@ Prioritized list of tasks for MintBean development.
 
 ## Completed Tasks
 
+### Foundation
 - [x] Project structure setup
 - [x] FastAPI application foundation
-- [x] SQLAlchemy models
-- [x] Pydantic schemas
-- [x] Basic CRUD endpoints
-- [x] React + TypeScript setup
+- [x] SQLAlchemy models (Account, Transaction, Category, Rule, PlaidItem)
+- [x] Pydantic schemas with validation
+- [x] Basic CRUD endpoints for all models
+- [x] React + TypeScript setup with Vite
 - [x] Tailwind CSS configuration
-- [x] Basic routing
-- [x] API client setup
-- [x] Layout component
-- [x] Transaction list component
-- [x] Docker setup
-- [x] Development tooling (linting, formatting)
-- [x] Initial documentation
+- [x] React Router setup
+- [x] API client with React Query
+- [x] Layout component with navigation
+- [x] Docker setup for development
+- [x] Development tooling (black, ruff, eslint, prettier)
+- [x] Initial documentation (README, TASK_QUEUE)
+
+### Plaid Integration (Complete)
+- [x] PlaidService implementation
+  - [x] Link token creation
+  - [x] Public token exchange
+  - [x] Account fetching and syncing
+  - [x] Transaction syncing with cursor-based pagination
+  - [x] Institution details fetching
+  - [x] Pending transaction handling
+- [x] PlaidItem model and database schema
+- [x] Plaid API endpoints (all 5 endpoints)
+- [x] PlaidLink React component with OAuth flow
+- [x] PlaidAccountsManager component
+- [x] Integration with Accounts page
+- [x] Error handling and reconnection flow
+- [x] Comprehensive documentation (PENDING_TRANSACTIONS.md)
+
+### Transaction UI
+- [x] Transaction list page with pagination
+- [x] Transaction detail modal
+  - [x] View/edit mode toggle
+  - [x] Category selector
+  - [x] Mark as reviewed
+  - [x] Show technical details
+  - [x] Display pending status with badge
+- [x] Transaction filters component
+  - [x] Date range presets (Today, Last 7 Days, etc.)
+  - [x] Custom date pickers
+  - [x] Account and category filters
+  - [x] Active filter display
+  - [x] Inline collapsible panel
+- [x] Transaction API with filtering and pagination
+- [x] Beancount flag display (! for pending, * for completed)
+
+### Testing & CI/CD
+- [x] Pytest configuration with fixtures
+- [x] In-memory SQLite test database
+- [x] Mock Plaid API responses
+- [x] 49 comprehensive backend tests
+  - [x] PlaidService unit tests
+  - [x] Plaid API endpoint tests
+  - [x] Transaction API tests
+  - [x] Transaction model tests
+  - [x] E2E Plaid integration tests
+  - [x] Pending transaction workflow tests
+- [x] Pre-commit hooks (black, ruff, pytest)
+- [x] GitHub Actions CI workflow
+  - [x] Python 3.13 support
+  - [x] Test coverage reporting
+  - [x] Linting and type checking
+  - [x] Frontend build verification
+
+### Database
+- [x] SQLite database setup
+- [x] Database migration for Account.is_active field
+- [x] Foreign key relationships
+- [x] Unique constraints for Plaid IDs
+- [x] Pending transaction tracking
 
 ---
 
