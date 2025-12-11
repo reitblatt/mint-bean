@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { transactionsApi } from '@/api/transactions'
 import TransactionList from '@/components/TransactionList'
+import TransactionDetailModal from '@/components/TransactionDetailModal'
+import TransactionFiltersPanel from '@/components/TransactionFilters'
 import type { Transaction, TransactionFilters } from '@/api/types'
 
 export default function Transactions() {
@@ -9,6 +11,9 @@ export default function Transactions() {
     page: 1,
     page_size: 50,
   })
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['transactions', filters],
@@ -16,8 +21,13 @@ export default function Transactions() {
   })
 
   const handleTransactionClick = (transaction: Transaction) => {
-    console.log('Transaction clicked:', transaction)
-    // TODO: Open transaction detail modal
+    setSelectedTransaction(transaction)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedTransaction(null)
   }
 
   return (
@@ -25,22 +35,30 @@ export default function Transactions() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
         <div className="flex gap-3">
-          <button className="btn btn-secondary">Filter</button>
           <button className="btn btn-primary">Sync from Plaid</button>
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <div className="mb-6">
         <input
           type="text"
           placeholder="Search transactions..."
           className="input max-w-md"
+          value={filters.search || ''}
           onChange={(e) =>
             setFilters((prev) => ({ ...prev, search: e.target.value, page: 1 }))
           }
         />
       </div>
+
+      {/* Filters Panel */}
+      <TransactionFiltersPanel
+        filters={filters}
+        onFiltersChange={setFilters}
+        isOpen={isFiltersOpen}
+        onToggle={() => setIsFiltersOpen(!isFiltersOpen)}
+      />
 
       {/* Transaction List */}
       {isLoading && (
@@ -91,6 +109,13 @@ export default function Transactions() {
           )}
         </>
       )}
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }
