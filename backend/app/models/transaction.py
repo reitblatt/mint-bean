@@ -1,6 +1,6 @@
 """Transaction model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -46,8 +46,13 @@ class Transaction(Base):
     synced_to_beancount = Column(Boolean, default=False)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
 
     # Original data from Plaid (JSON)
     raw_data = Column(Text, nullable=True)
@@ -61,7 +66,7 @@ class Transaction(Base):
             '!' for pending transactions (not yet cleared)
             '*' for completed/cleared transactions
         """
-        return '!' if self.pending else '*'
+        return "!" if self.pending else "*"
 
     def __repr__(self) -> str:
         """String representation of transaction."""

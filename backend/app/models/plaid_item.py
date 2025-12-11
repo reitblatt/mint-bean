@@ -1,6 +1,6 @@
 """Plaid Item model for storing Plaid access tokens and metadata."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
@@ -29,8 +29,12 @@ class PlaidItem(Base):
     error_code = Column(String, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
     last_synced_at = Column(DateTime, nullable=True)
 
     def __repr__(self):

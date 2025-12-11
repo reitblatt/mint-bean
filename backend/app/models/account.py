@@ -1,6 +1,6 @@
 """Account model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -44,11 +44,18 @@ class Account(Base):
 
     # Timestamps
     last_synced_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
 
     # Relationships
-    transactions = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")
+    transactions = relationship(
+        "Transaction", back_populates="account", cascade="all, delete-orphan"
+    )
 
     # Account metadata (JSON) - renamed from 'metadata' to avoid conflict with SQLAlchemy
     account_metadata = Column(Text, nullable=True)

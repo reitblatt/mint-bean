@@ -1,7 +1,7 @@
 """Plaid integration service."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 import plaid
 from plaid.api import plaid_api
@@ -133,7 +133,7 @@ class PlaidService:
                 plaid_item.is_active = True
                 plaid_item.needs_update = False
                 plaid_item.error_code = None
-                plaid_item.updated_at = datetime.utcnow()
+                plaid_item.updated_at = datetime.now(UTC)
             else:
                 plaid_item = PlaidItem(
                     item_id=item_id,
@@ -213,7 +213,7 @@ class PlaidService:
                         current_balance=plaid_account.balances.current,
                         available_balance=plaid_account.balances.available,
                         is_active=True,
-                        last_synced_at=datetime.utcnow(),
+                        last_synced_at=datetime.now(UTC),
                     )
                     db.add(account)
                 else:
@@ -235,7 +235,7 @@ class PlaidService:
                     account.current_balance = plaid_account.balances.current
                     account.available_balance = plaid_account.balances.available
                     account.is_active = True
-                    account.last_synced_at = datetime.utcnow()
+                    account.last_synced_at = datetime.now(UTC)
 
                 accounts.append(account)
 
@@ -337,7 +337,7 @@ class PlaidService:
                         existing.payee = plaid_txn.merchant_name or plaid_txn.name
                         existing.amount = -plaid_txn.amount
                         existing.pending = plaid_txn.pending
-                        existing.updated_at = datetime.utcnow()
+                        existing.updated_at = datetime.now(UTC)
                         modified_count += 1
 
                 # Process removed transactions
@@ -359,7 +359,7 @@ class PlaidService:
 
             # Update plaid_item with new cursor and sync time
             plaid_item.cursor = cursor
-            plaid_item.last_synced_at = datetime.utcnow()
+            plaid_item.last_synced_at = datetime.now(UTC)
             plaid_item.needs_update = False
             plaid_item.error_code = None
             db.commit()

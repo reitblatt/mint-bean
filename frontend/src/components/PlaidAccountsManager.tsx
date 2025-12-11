@@ -143,6 +143,7 @@ export default function PlaidAccountsManager() {
                           hour: 'numeric',
                           minute: '2-digit',
                           hour12: true,
+                          timeZoneName: 'short'
                         })
                       : 'Never'}
                   </p>
