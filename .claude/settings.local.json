@@ -10,7 +10,19 @@
       "Bash(cat:*)",
       "Bash(curl:*)",
       "Bash(npm install)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd transaction detail modal and inline filters UI\n\n- Create TransactionDetailModal component for viewing/editing transactions\n  - View mode shows all transaction details with status badges\n  - Edit mode allows updating description and category\n  - Quick \"mark as reviewed\" checkbox\n  - Shows technical details (transaction IDs, timestamps)\n  \n- Create TransactionFilters component as inline collapsible panel\n  - Quick date range presets (Today, Last 7 Days, Last Month, etc.)\n  - Custom start/end date pickers\n  - Account and category filter dropdowns\n  - Active filters display with individual removal\n  - Filters apply immediately on change\n  - Badge shows count of active filters\n\n- Update Transactions page to integrate new components\n  - Replace modal filters with inline collapsible panel\n  - Add transaction detail modal on row click\n  - Clean up redundant filter displays\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd Plaid integration backend\n\nBackend Models & Services:\n- Add PlaidItem model for storing Plaid access tokens and sync state\n  - Tracks institution info, sync cursor, and error states\n  - Manages active/inactive status and reconnection needs\n  \n- Implement PlaidService with full Plaid API integration\n  - create_link_token() - Generate tokens for Plaid Link UI\n  - exchange_public_token() - Exchange public token for access token\n  - get_accounts() - Fetch and sync bank accounts from Plaid\n  - sync_transactions() - Incrementally sync transactions using Plaid sync API\n  - Handles institution details and error states\n  - Logs pending → completed transaction transitions\n\nAPI Endpoints:\n- POST /api/v1/plaid/link/token/create - Create link token\n- POST /api/v1/plaid/item/public_token/exchange - Exchange tokens\n- GET /api/v1/plaid/items - List connected items\n- POST /api/v1/plaid/items/{id}/sync - Sync transactions\n- DELETE /api/v1/plaid/items/{id} - Disconnect account\n\nDatabase Schema Updates:\n- Fix Account model: rename ''active'' to ''is_active'' for consistency\n- Add Transaction.beancount_flag property\n  - Returns ''!'' for pending transactions (not yet cleared)\n  - Returns ''*'' for completed/cleared transactions\n\nPending Transaction Handling:\n- Track pending status and Plaid transaction IDs\n- Update existing transactions when they clear (no duplicates)\n- Log pending → completed transitions for audit trail\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(pytest:*)",
+      "Bash(ls:*)",
+      "Bash(sqlite3:*)",
+      "Bash(pre-commit uninstall:*)",
+      "Bash(pre-commit install:*)",
+      "Bash(ruff check:*)",
+      "Bash(black:*)"
     ]
   }
 }

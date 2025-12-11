@@ -28,7 +28,7 @@ def list_rules(
     """
     query = db.query(Rule)
     if active_only:
-        query = query.filter(Rule.active == True)
+        query = query.filter(Rule.active)
     return query.order_by(Rule.priority.desc()).all()
 
 

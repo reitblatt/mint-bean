@@ -3,7 +3,7 @@
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     from beancount import loader
@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 class BeancountService:
     """Service for reading and writing beancount files."""
 
-    def __init__(self, file_path: Optional[str] = None):
+    def __init__(self, file_path: str | None = None):
         """
         Initialize beancount service.
 
@@ -86,10 +86,18 @@ class BeancountService:
 
                 # Determine the main account and category
                 # Find asset/liability accounts (where money came from/went to)
-                asset_postings = [p for p in txn_data["postings"] if p["account"].startswith("Assets:")]
-                liability_postings = [p for p in txn_data["postings"] if p["account"].startswith("Liabilities:")]
-                expense_postings = [p for p in txn_data["postings"] if p["account"].startswith("Expenses:")]
-                income_postings = [p for p in txn_data["postings"] if p["account"].startswith("Income:")]
+                asset_postings = [
+                    p for p in txn_data["postings"] if p["account"].startswith("Assets:")
+                ]
+                liability_postings = [
+                    p for p in txn_data["postings"] if p["account"].startswith("Liabilities:")
+                ]
+                expense_postings = [
+                    p for p in txn_data["postings"] if p["account"].startswith("Expenses:")
+                ]
+                income_postings = [
+                    p for p in txn_data["postings"] if p["account"].startswith("Income:")
+                ]
 
                 # Main account (where the money moved)
                 if asset_postings:
@@ -199,9 +207,9 @@ class BeancountService:
         payee: str,
         narration: str,
         postings: list[dict[str, Any]],
-        tags: Optional[list[str]] = None,
-        links: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        links: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Write a transaction to the beancount file.
@@ -228,11 +236,7 @@ class BeancountService:
         # TODO: Implement actual writing
         return True
 
-    def update_transaction(
-        self,
-        transaction_id: str,
-        updates: dict[str, Any]
-    ) -> bool:
+    def update_transaction(self, transaction_id: str, updates: dict[str, Any]) -> bool:
         """
         Update an existing transaction in the beancount file.
 

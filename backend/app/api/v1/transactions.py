@@ -1,7 +1,5 @@
 """Transaction API endpoints."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -21,11 +19,11 @@ router = APIRouter()
 def list_transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    account_id: Optional[int] = None,
-    category_id: Optional[int] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    search: Optional[str] = None,
+    account_id: int | None = None,
+    category_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
 ) -> TransactionListResponse:
     """

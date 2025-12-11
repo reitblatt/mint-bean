@@ -1,7 +1,6 @@
 """Category schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,10 +12,10 @@ class CategoryBase(BaseModel):
     display_name: str
     beancount_account: str
     category_type: str
-    parent_category: Optional[str] = None
-    icon: Optional[str] = None
-    color: Optional[str] = None
-    description: Optional[str] = None
+    parent_category: str | None = None
+    icon: str | None = None
+    color: str | None = None
+    description: str | None = None
 
 
 class CategoryCreate(CategoryBase):
@@ -28,12 +27,12 @@ class CategoryCreate(CategoryBase):
 class CategoryUpdate(BaseModel):
     """Schema for updating a category."""
 
-    display_name: Optional[str] = None
-    beancount_account: Optional[str] = None
-    parent_category: Optional[str] = None
-    icon: Optional[str] = None
-    color: Optional[str] = None
-    description: Optional[str] = None
+    display_name: str | None = None
+    beancount_account: str | None = None
+    parent_category: str | None = None
+    icon: str | None = None
+    color: str | None = None
+    description: str | None = None
 
 
 class CategoryResponse(CategoryBase):

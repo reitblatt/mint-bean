@@ -35,9 +35,9 @@ def create_link_token(
         result = plaid_service.create_link_token(user_id=request.user_id)
         return LinkTokenCreateResponse(**result)
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create link token: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create link token: {str(e)}") from e
 
 
 @router.post("/item/public_token/exchange", response_model=PublicTokenExchangeResponse)
@@ -63,11 +63,11 @@ def exchange_public_token(
             institution_name=plaid_item.institution_name,
         )
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to exchange public token: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/items", response_model=list[PlaidItemResponse])
@@ -83,7 +83,7 @@ def list_plaid_items(
     Returns:
         List of Plaid items
     """
-    items = db.query(PlaidItem).filter(PlaidItem.is_active == True).all()
+    items = db.query(PlaidItem).filter(PlaidItem.is_active).all()
     return items
 
 
@@ -140,9 +140,9 @@ def sync_transactions(
             cursor=cursor,
         )
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to sync transactions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to sync transactions: {str(e)}") from e
 
 
 @router.delete("/items/{item_id}", status_code=204)

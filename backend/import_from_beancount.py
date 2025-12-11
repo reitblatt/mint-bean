@@ -7,24 +7,26 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from sqlalchemy.orm import Session
+
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sqlalchemy.orm import Session
-
-from app.core.database import SessionLocal
-from app.models.account import Account
-from app.models.category import Category
-from app.models.transaction import Transaction
-from app.services.beancount_service import BeancountService
+from app.core.database import SessionLocal  # noqa: E402
+from app.models.account import Account  # noqa: E402
+from app.models.category import Category  # noqa: E402
+from app.models.transaction import Transaction  # noqa: E402
+from app.services.beancount_service import BeancountService  # noqa: E402
 
 
 def create_or_get_account(db: Session, account_data: dict) -> Account:
     """Create account if it doesn't exist, or return existing one."""
     # Check if account exists by beancount_account name
-    account = db.query(Account).filter(
-        Account.beancount_account == account_data["beancount_account"]
-    ).first()
+    account = (
+        db.query(Account)
+        .filter(Account.beancount_account == account_data["beancount_account"])
+        .first()
+    )
 
     if account:
         return account
@@ -51,9 +53,7 @@ def create_or_get_account(db: Session, account_data: dict) -> Account:
 def create_or_get_category(db: Session, category_account: str, category_type: str) -> Category:
     """Create category if it doesn't exist, or return existing one."""
     # Check if category exists
-    category = db.query(Category).filter(
-        Category.beancount_account == category_account
-    ).first()
+    category = db.query(Category).filter(Category.beancount_account == category_account).first()
 
     if category:
         return category
@@ -122,9 +122,11 @@ def import_transactions():
 
         for txn_data in transactions_data:
             # Check if transaction already exists
-            existing = db.query(Transaction).filter(
-                Transaction.transaction_id == txn_data["transaction_id"]
-            ).first()
+            existing = (
+                db.query(Transaction)
+                .filter(Transaction.transaction_id == txn_data["transaction_id"])
+                .first()
+            )
 
             if existing:
                 skipped += 1
@@ -133,7 +135,9 @@ def import_transactions():
             # Get or create account
             main_account = txn_data.get("main_account")
             if not main_account:
-                print(f"⚠️  Skipping transaction without main account: {txn_data['date']} - {txn_data['payee']}")
+                print(
+                    f"⚠️  Skipping transaction without main account: {txn_data['date']} - {txn_data['payee']}"
+                )
                 skipped += 1
                 continue
 
@@ -156,9 +160,7 @@ def import_transactions():
             category_id = None
             if txn_data.get("category_account"):
                 category = create_or_get_category(
-                    db,
-                    txn_data["category_account"],
-                    txn_data.get("category_type", "expense")
+                    db, txn_data["category_account"], txn_data.get("category_type", "expense")
                 )
                 category_id = category.id
 
@@ -198,6 +200,7 @@ def import_transactions():
     except Exception as e:
         print(f"\n❌ Error during import: {e}")
         import traceback
+
         traceback.print_exc()
         db.rollback()
 

@@ -1,7 +1,6 @@
 """Transaction schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -12,8 +11,8 @@ class TransactionBase(BaseModel):
     date: datetime
     amount: float
     description: str
-    payee: Optional[str] = None
-    narration: Optional[str] = None
+    payee: str | None = None
+    narration: str | None = None
     currency: str = "USD"
     pending: bool = False
     reviewed: bool = False
@@ -23,27 +22,27 @@ class TransactionCreate(TransactionBase):
     """Schema for creating a transaction."""
 
     account_id: int
-    category_id: Optional[int] = None
-    beancount_account: Optional[str] = None
-    plaid_transaction_id: Optional[str] = None
-    tags: Optional[list[str]] = None
-    links: Optional[list[str]] = None
+    category_id: int | None = None
+    beancount_account: str | None = None
+    plaid_transaction_id: str | None = None
+    tags: list[str] | None = None
+    links: list[str] | None = None
 
 
 class TransactionUpdate(BaseModel):
     """Schema for updating a transaction."""
 
-    date: Optional[datetime] = None
-    amount: Optional[float] = None
-    description: Optional[str] = None
-    payee: Optional[str] = None
-    narration: Optional[str] = None
-    category_id: Optional[int] = None
-    beancount_account: Optional[str] = None
-    pending: Optional[bool] = None
-    reviewed: Optional[bool] = None
-    tags: Optional[list[str]] = None
-    links: Optional[list[str]] = None
+    date: datetime | None = None
+    amount: float | None = None
+    description: str | None = None
+    payee: str | None = None
+    narration: str | None = None
+    category_id: int | None = None
+    beancount_account: str | None = None
+    pending: bool | None = None
+    reviewed: bool | None = None
+    tags: list[str] | None = None
+    links: list[str] | None = None
 
 
 class TransactionResponse(TransactionBase):
@@ -54,9 +53,9 @@ class TransactionResponse(TransactionBase):
     id: int
     transaction_id: str
     account_id: int
-    category_id: Optional[int] = None
-    beancount_account: Optional[str] = None
-    plaid_transaction_id: Optional[str] = None
+    category_id: int | None = None
+    beancount_account: str | None = None
+    plaid_transaction_id: str | None = None
     synced_to_beancount: bool = False
     beancount_flag: str
     created_at: datetime

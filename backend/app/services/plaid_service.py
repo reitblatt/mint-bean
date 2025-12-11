@@ -185,7 +185,6 @@ class PlaidService:
 
                 if not account:
                     # Generate a beancount account name
-                    account_type = plaid_account.subtype or plaid_account.type
                     safe_name = plaid_account.name.replace(" ", "")
                     beancount_account = (
                         f"Assets:{plaid_item.institution_name or 'Bank'}:{safe_name}"
@@ -219,9 +218,7 @@ class PlaidService:
             db.commit()
             raise
 
-    def sync_transactions(
-        self, plaid_item: PlaidItem, db: Session
-    ) -> tuple[int, int, int, str]:
+    def sync_transactions(self, plaid_item: PlaidItem, db: Session) -> tuple[int, int, int, str]:
         """
         Sync transactions from Plaid using the transactions/sync endpoint.
 
@@ -257,9 +254,7 @@ class PlaidService:
                 for plaid_txn in response.added:
                     account = account_map.get(plaid_txn.account_id)
                     if not account:
-                        logger.warning(
-                            f"Account {plaid_txn.account_id} not found for transaction"
-                        )
+                        logger.warning(f"Account {plaid_txn.account_id} not found for transaction")
                         continue
 
                     # Check if transaction already exists

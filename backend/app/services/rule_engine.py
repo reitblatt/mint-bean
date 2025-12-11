@@ -1,6 +1,6 @@
 """Rule engine for transaction categorization."""
 
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,7 @@ class RuleEngine:
         """
         self.db = db
 
-    def apply_rules(self, transaction: Transaction) -> Optional[dict[str, Any]]:
+    def apply_rules(self, transaction: Transaction) -> dict[str, Any] | None:
         """
         Apply rules to a transaction.
 
@@ -41,7 +41,7 @@ class RuleEngine:
         """
         logger.info(f"Applying rules to transaction: {transaction.transaction_id}")
 
-        rules = self.db.query(Rule).filter(Rule.active == True).order_by(Rule.priority.desc()).all()
+        rules = self.db.query(Rule).filter(Rule.active).order_by(Rule.priority.desc()).all()
 
         for rule in rules:
             if self._matches_conditions(transaction, rule):
@@ -51,6 +51,7 @@ class RuleEngine:
                 # Update rule statistics
                 rule.match_count += 1
                 from datetime import datetime
+
                 rule.last_matched_at = datetime.utcnow()
                 self.db.commit()
 
@@ -76,6 +77,7 @@ class RuleEngine:
         - Support AND/OR logic for multiple conditions
         """
         import json
+
         conditions = json.loads(rule.conditions)
 
         # Simple example implementation
@@ -90,6 +92,7 @@ class RuleEngine:
                 return value == desc
             elif operator == "regex":
                 import re
+
                 return bool(re.search(value, desc))
 
         return False
@@ -109,6 +112,7 @@ class RuleEngine:
         - Validate actions before returning
         """
         import json
+
         return json.loads(actions_json)
 
     def apply_rules_bulk(self, transactions: list[Transaction]) -> dict[str, int]:

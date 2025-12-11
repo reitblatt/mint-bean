@@ -1,7 +1,6 @@
 """Plaid Item schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,8 +9,8 @@ class PlaidItemBase(BaseModel):
     """Base Plaid Item schema."""
 
     item_id: str
-    institution_id: Optional[str] = None
-    institution_name: Optional[str] = None
+    institution_id: str | None = None
+    institution_name: str | None = None
 
 
 class PlaidItemCreate(PlaidItemBase):
@@ -23,12 +22,12 @@ class PlaidItemCreate(PlaidItemBase):
 class PlaidItemUpdate(BaseModel):
     """Schema for updating a Plaid Item."""
 
-    institution_name: Optional[str] = None
-    cursor: Optional[str] = None
-    is_active: Optional[bool] = None
-    needs_update: Optional[bool] = None
-    error_code: Optional[str] = None
-    last_synced_at: Optional[datetime] = None
+    institution_name: str | None = None
+    cursor: str | None = None
+    is_active: bool | None = None
+    needs_update: bool | None = None
+    error_code: str | None = None
+    last_synced_at: datetime | None = None
 
 
 class PlaidItemResponse(PlaidItemBase):
@@ -37,10 +36,10 @@ class PlaidItemResponse(PlaidItemBase):
     id: int
     is_active: bool
     needs_update: bool
-    error_code: Optional[str] = None
+    error_code: str | None = None
     created_at: datetime
     updated_at: datetime
-    last_synced_at: Optional[datetime] = None
+    last_synced_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -48,7 +47,7 @@ class PlaidItemResponse(PlaidItemBase):
 class LinkTokenCreateRequest(BaseModel):
     """Request schema for creating a link token."""
 
-    user_id: Optional[str] = "user-1"  # For now, hardcoded user
+    user_id: str | None = "user-1"  # For now, hardcoded user
 
 
 class LinkTokenCreateResponse(BaseModel):
@@ -68,8 +67,8 @@ class PublicTokenExchangeResponse(BaseModel):
     """Response schema for public token exchange."""
 
     item_id: str
-    institution_id: Optional[str] = None
-    institution_name: Optional[str] = None
+    institution_id: str | None = None
+    institution_name: str | None = None
 
 
 class TransactionsSyncResponse(BaseModel):
