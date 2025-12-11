@@ -22,7 +22,11 @@
       "Bash(pre-commit uninstall:*)",
       "Bash(pre-commit install:*)",
       "Bash(ruff check:*)",
-      "Bash(black:*)"
+      "Bash(black:*)",
+      "Bash(if [ -f .env ])",
+      "Bash(then echo \"=== .env exists ===\")",
+      "Bash(else echo \".env file not found\")",
+      "Bash(fi)"
     ]
   }
 }

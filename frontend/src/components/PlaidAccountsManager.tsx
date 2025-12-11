@@ -136,7 +136,14 @@ export default function PlaidAccountsManager() {
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
                     Last synced: {item.last_synced_at
-                      ? new Date(item.last_synced_at).toLocaleString()
+                      ? new Date(item.last_synced_at).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })
                       : 'Never'}
                   </p>
                   {item.error_code && (

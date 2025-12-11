@@ -190,20 +190,52 @@ class PlaidService:
                         f"Assets:{plaid_item.institution_name or 'Bank'}:{safe_name}"
                     )
 
+                    # Extract subtype as string (handle both enum and string)
+                    subtype_str = None
+                    if plaid_account.subtype:
+                        subtype_str = (
+                            plaid_account.subtype.value
+                            if hasattr(plaid_account.subtype, "value")
+                            else plaid_account.subtype
+                        )
+
                     account = Account(
                         name=plaid_account.name,
+                        official_name=plaid_account.official_name,
                         account_id=f"plaid_{plaid_account.account_id}",
                         plaid_account_id=plaid_account.account_id,
                         type=plaid_account.type.value,
+                        subtype=subtype_str,
+                        institution_name=plaid_item.institution_name,
+                        institution_id=plaid_item.institution_id,
                         beancount_account=beancount_account,
                         currency=plaid_account.balances.iso_currency_code or "USD",
+                        current_balance=plaid_account.balances.current,
+                        available_balance=plaid_account.balances.available,
                         is_active=True,
+                        last_synced_at=datetime.utcnow(),
                     )
                     db.add(account)
                 else:
-                    # Update account name if changed
+                    # Extract subtype as string (handle both enum and string)
+                    subtype_str = None
+                    if plaid_account.subtype:
+                        subtype_str = (
+                            plaid_account.subtype.value
+                            if hasattr(plaid_account.subtype, "value")
+                            else plaid_account.subtype
+                        )
+
+                    # Update account details
                     account.name = plaid_account.name
+                    account.official_name = plaid_account.official_name
+                    account.subtype = subtype_str
+                    account.institution_name = plaid_item.institution_name
+                    account.institution_id = plaid_item.institution_id
+                    account.current_balance = plaid_account.balances.current
+                    account.available_balance = plaid_account.balances.available
                     account.is_active = True
+                    account.last_synced_at = datetime.utcnow()
 
                 accounts.append(account)
 

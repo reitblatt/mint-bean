@@ -1,0 +1,19 @@
+; MintBean Test Ledger
+; Created: 2025-12-11
+
+option "title" "MintBean Test Ledger"
+option "operating_currency" "USD"
+
+; Opening balances
+2025-12-11 open Assets:Checking:Test USD
+2025-12-11 open Expenses:Food:Groceries USD
+2025-12-11 open Expenses:Food:Restaurants USD
+2025-12-11 open Expenses:Transportation USD
+2025-12-11 open Expenses:Utilities USD
+2025-12-11 open Expenses:Entertainment USD
+2025-12-11 open Expenses:Shopping USD
+2025-12-11 open Expenses:Healthcare USD
+2025-12-11 open Income:Salary USD
+2025-12-11 open Income:Investment USD
+
+; Transactions will be synced here by MintBean

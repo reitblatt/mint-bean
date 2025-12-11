@@ -1,6 +1,8 @@
 import { apiClient } from './client'
 import type { Account } from './types'
 
+export type { Account }
+
 export const accountsApi = {
   list: async (activeOnly = true): Promise<Account[]> => {
     const { data } = await apiClient.get<Account[]>('/accounts', {
