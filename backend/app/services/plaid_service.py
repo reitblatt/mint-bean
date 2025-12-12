@@ -17,8 +17,10 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.account import Account
+from app.models.plaid_category_mapping import PlaidCategoryMapping
 from app.models.plaid_item import PlaidItem
 from app.models.transaction import Transaction
+from app.services.rule_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
 
@@ -356,6 +358,11 @@ class PlaidService:
                             merchant_name=plaid_txn.merchant_name,
                         )
                         db.add(transaction)
+                        db.flush()  # Flush to get transaction ID for auto-categorization
+
+                        # Apply auto-categorization
+                        self.apply_auto_categorization(transaction, db)
+
                         added_count += 1
 
                 # Process modified transactions
@@ -427,6 +434,12 @@ class PlaidService:
                         existing.plaid_detailed_category = plaid_detailed
                         existing.plaid_confidence_level = plaid_confidence
                         existing.merchant_name = plaid_txn.merchant_name
+
+                        # Re-apply auto-categorization if transaction cleared from pending
+                        # or if it was never categorized
+                        if (was_pending and not is_now_pending) or not existing.category_id:
+                            self.apply_auto_categorization(existing, db)
+
                         modified_count += 1
 
                 # Process removed transactions
@@ -466,6 +479,97 @@ class PlaidService:
             plaid_item.error_code = str(e.status)
             db.commit()
             raise
+
+    def apply_auto_categorization(
+        self, transaction: Transaction, db: Session
+    ) -> dict[str, str | None]:
+        """
+        Apply auto-categorization to a transaction.
+
+        Auto-categorization happens in this order:
+        1. Plaid category mapping (if available)
+        2. Rule engine (if no mapping or mapping failed)
+
+        Args:
+            transaction: Transaction to categorize
+            db: Database session
+
+        Returns:
+            Dictionary with categorization result:
+            {
+                "method": "plaid_mapping" | "rule" | None,
+                "category_id": int | None,
+                "confidence": float | None
+            }
+        """
+        # Skip if already categorized manually
+        if transaction.category_id and not transaction.auto_categorized:
+            logger.debug(
+                f"Transaction {transaction.transaction_id} already manually categorized, skipping"
+            )
+            return {"method": None, "category_id": transaction.category_id, "confidence": None}
+
+        # Try Plaid category mapping first
+        if transaction.plaid_primary_category:
+            mapping = (
+                db.query(PlaidCategoryMapping)
+                .filter(
+                    PlaidCategoryMapping.plaid_primary_category
+                    == transaction.plaid_primary_category,
+                    PlaidCategoryMapping.auto_apply.is_(True),
+                )
+                .filter(
+                    (PlaidCategoryMapping.plaid_detailed_category.is_(None))
+                    | (
+                        PlaidCategoryMapping.plaid_detailed_category
+                        == transaction.plaid_detailed_category
+                    )
+                )
+                .order_by(
+                    # Prefer detailed mappings over primary-only mappings
+                    PlaidCategoryMapping.plaid_detailed_category.isnot(None).desc(),
+                    PlaidCategoryMapping.confidence.desc(),
+                )
+                .first()
+            )
+
+            if mapping:
+                transaction.category_id = mapping.category_id
+                transaction.auto_categorized = True
+                transaction.categorization_method = "plaid_mapping"
+
+                # Update mapping statistics
+                mapping.match_count += 1
+                mapping.last_matched_at = datetime.now(UTC)
+
+                logger.info(
+                    f"Applied Plaid mapping to transaction {transaction.transaction_id}: "
+                    f"{mapping.plaid_primary_category} → category {mapping.category_id}"
+                )
+
+                return {
+                    "method": "plaid_mapping",
+                    "category_id": mapping.category_id,
+                    "confidence": mapping.confidence,
+                }
+
+        # Try rule engine if no Plaid mapping applied
+        rule_engine = RuleEngine(db)
+        actions = rule_engine.apply_rules(transaction, apply_changes=True)
+
+        if actions and "set_category" in actions:
+            logger.info(
+                f"Applied rule to transaction {transaction.transaction_id}: "
+                f"category {transaction.category_id}"
+            )
+            return {
+                "method": "rule",
+                "category_id": transaction.category_id,
+                "confidence": None,
+            }
+
+        # No categorization applied
+        return {"method": None, "category_id": None, "confidence": None}
 
 
 # Singleton instance
