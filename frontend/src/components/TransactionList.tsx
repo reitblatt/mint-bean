@@ -1,15 +1,19 @@
 import { format } from 'date-fns'
-import type { Transaction } from '@/api/types'
+import type { Transaction, Category, Account } from '@/api/types'
 import clsx from 'clsx'
 
 interface TransactionListProps {
   transactions: Transaction[]
   onTransactionClick?: (transaction: Transaction) => void
+  categories?: Category[]
+  accounts?: Account[]
 }
 
 export default function TransactionList({
   transactions,
   onTransactionClick,
+  categories,
+  accounts,
 }: TransactionListProps) {
   const formatAmount = (amount: number) => {
     const absAmount = Math.abs(amount)
@@ -21,6 +25,16 @@ export default function TransactionList({
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy')
+  }
+
+  const getCategoryName = (categoryId: number): string => {
+    const category = categories?.find((cat) => cat.id === categoryId)
+    return category?.display_name || `Category ${categoryId}`
+  }
+
+  const getAccountName = (accountId: number): string => {
+    const account = accounts?.find((acc) => acc.id === accountId)
+    return account?.name || `Account ${accountId}`
   }
 
   return (
@@ -67,14 +81,14 @@ export default function TransactionList({
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {transaction.category_id ? (
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    Category {transaction.category_id}
+                    {getCategoryName(transaction.category_id)}
                   </span>
                 ) : (
                   <span className="text-gray-400">Uncategorized</span>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {transaction.beancount_account || `Account ${transaction.account_id}`}
+                {getAccountName(transaction.account_id)}
               </td>
               <td
                 className={clsx(

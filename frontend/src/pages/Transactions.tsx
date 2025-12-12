@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { transactionsApi } from '@/api/transactions'
+import { categoriesApi } from '@/api/categories'
+import { accountsApi } from '@/api/accounts'
 import TransactionList from '@/components/TransactionList'
 import TransactionDetailModal from '@/components/TransactionDetailModal'
 import TransactionFiltersPanel from '@/components/TransactionFilters'
@@ -18,6 +20,18 @@ export default function Transactions() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => transactionsApi.list(filters),
+  })
+
+  // Fetch categories for display
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list({ includeInactive: false }),
+  })
+
+  // Fetch accounts for display
+  const { data: accounts } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountsApi.list(),
   })
 
   const handleTransactionClick = (transaction: Transaction) => {
@@ -79,6 +93,8 @@ export default function Transactions() {
           <TransactionList
             transactions={data.transactions}
             onTransactionClick={handleTransactionClick}
+            categories={categories}
+            accounts={accounts}
           />
 
           {/* Pagination */}
