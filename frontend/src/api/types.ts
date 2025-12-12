@@ -13,6 +13,10 @@ export interface Transaction {
   reviewed: boolean
   beancount_account?: string
   plaid_transaction_id?: string
+  plaid_primary_category?: string
+  plaid_detailed_category?: string
+  plaid_confidence_level?: string
+  merchant_name?: string
   synced_to_beancount: boolean
   created_at: string
   updated_at: string

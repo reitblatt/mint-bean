@@ -187,6 +187,38 @@ export default function TransactionDetailModal({
             </div>
           </div>
 
+          {/* Plaid Categorization */}
+          {(transaction.plaid_primary_category || transaction.merchant_name) && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <label className="block text-sm font-medium text-purple-900 mb-2">
+                Plaid Categorization
+              </label>
+              <div className="space-y-2">
+                {transaction.merchant_name && (
+                  <div>
+                    <span className="text-xs text-purple-700 font-medium">Merchant: </span>
+                    <span className="text-sm text-purple-900">{transaction.merchant_name}</span>
+                  </div>
+                )}
+                {transaction.plaid_primary_category && (
+                  <div>
+                    <span className="text-xs text-purple-700 font-medium">Category: </span>
+                    <span className="text-sm text-purple-900">
+                      {transaction.plaid_primary_category}
+                      {transaction.plaid_detailed_category && ` › ${transaction.plaid_detailed_category}`}
+                    </span>
+                  </div>
+                )}
+                {transaction.plaid_confidence_level && (
+                  <div>
+                    <span className="text-xs text-purple-700 font-medium">Confidence: </span>
+                    <span className="text-sm text-purple-900">{transaction.plaid_confidence_level}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Status Badges */}
           <div className="flex gap-2">
             {transaction.pending && (
