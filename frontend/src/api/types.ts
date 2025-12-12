@@ -52,12 +52,35 @@ export interface Category {
   display_name: string
   beancount_account: string
   category_type: string
-  parent_category?: string
+  parent_id?: number
   icon?: string
   color?: string
   description?: string
+  display_order: number
+  is_active: boolean
+  is_system: boolean
+  transaction_count: number
+  last_used_at?: string
   created_at: string
   updated_at: string
+}
+
+export interface CategoryTreeNode {
+  id: number
+  name: string
+  display_name: string
+  category_type: string
+  icon?: string
+  color?: string
+  parent_id?: number
+  transaction_count: number
+  children: CategoryTreeNode[]
+}
+
+export interface CategoryMergeRequest {
+  source_category_ids: number[]
+  target_category_id: number
+  delete_source_categories?: boolean
 }
 
 export interface Rule {
