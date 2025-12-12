@@ -29,6 +29,7 @@ export default function CategoryFormModal({
     color: '',
     description: '',
   })
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     if (category) {
@@ -73,16 +74,91 @@ export default function CategoryFormModal({
     },
   })
 
+  // Auto-generate name from display_name
+  const generateName = (displayName: string): string => {
+    return displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')
+  }
+
+  // Helper to find category in tree (recursive)
+  const findCategoryInTree = (
+    nodes: CategoryTreeNode[],
+    id: number
+  ): CategoryTreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node
+      if (node.children) {
+        const found = findCategoryInTree(node.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  // Auto-generate beancount account from hierarchy
+  const generateBeancountAccount = (): string => {
+    // Get type prefix
+    const typePrefix =
+      formData.category_type === 'expense'
+        ? 'Expenses'
+        : formData.category_type === 'income'
+          ? 'Income'
+          : 'Equity'
+
+    // Build hierarchy
+    const parts = [typePrefix]
+
+    // If there's a parent, use its path (excluding type prefix)
+    if (formData.parent_id) {
+      const parentCategory = findCategoryInTree(allCategories, formData.parent_id)
+      if (parentCategory) {
+        // For tree nodes, we need to build the path from display_name
+        // since beancount_account might not be available
+        const parentParts: string[] = []
+
+        // Simple approach: just use parent's display name
+        const parentName = parentCategory.display_name
+          .split(' ')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join('')
+        parentParts.push(parentName)
+
+        parts.push(...parentParts)
+      }
+    }
+
+    // Add current category display name (capitalized, no spaces)
+    const currentName = formData.display_name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join('')
+
+    parts.push(currentName)
+
+    return parts.join(':')
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Auto-generate name and beancount_account if not in advanced mode
+    const submitData = {
+      ...formData,
+      name: showAdvanced ? formData.name : generateName(formData.display_name),
+      beancount_account: showAdvanced
+        ? formData.beancount_account
+        : generateBeancountAccount(),
+    }
 
     if (isEdit && 'id' in category) {
       updateMutation.mutate({
         id: category.id,
-        updates: formData,
+        updates: submitData,
       })
     } else {
-      createMutation.mutate(formData)
+      createMutation.mutate(submitData)
     }
   }
 
@@ -125,24 +201,11 @@ export default function CategoryFormModal({
                 }
                 placeholder="e.g., Groceries"
               />
-            </div>
-
-            {/* Name (ID) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name (ID) *
-              </label>
-              <input
-                type="text"
-                required
-                className="input"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., groceries"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Lowercase, no spaces. Used as unique identifier.
-              </p>
+              {!showAdvanced && formData.display_name && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto-generated ID: {generateName(formData.display_name)}
+                </p>
+              )}
             </div>
 
             {/* Category Type */}
@@ -190,22 +253,63 @@ export default function CategoryFormModal({
               </select>
             </div>
 
-            {/* Beancount Account */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Beancount Account *
-              </label>
-              <input
-                type="text"
-                required
-                className="input"
-                value={formData.beancount_account}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, beancount_account: e.target.value }))
-                }
-                placeholder="e.g., Expenses:Food:Groceries"
-              />
+            {/* Show/Hide Advanced Options */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                {showAdvanced ? '▼' : '▶'} Advanced Options
+              </button>
             </div>
+
+            {/* Advanced Options */}
+            {showAdvanced && (
+              <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                {/* Name (ID) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name (ID) *
+                  </label>
+                  <input
+                    type="text"
+                    required={showAdvanced}
+                    className="input"
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., groceries"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lowercase, no spaces. Used as unique identifier.
+                  </p>
+                </div>
+
+                {/* Beancount Account */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Beancount Account *
+                  </label>
+                  <input
+                    type="text"
+                    required={showAdvanced}
+                    className="input"
+                    value={formData.beancount_account}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, beancount_account: e.target.value }))
+                    }
+                    placeholder="e.g., Expenses:Food:Groceries"
+                  />
+                </div>
+              </div>
+            )}
+
+            {!showAdvanced && formData.display_name && (
+              <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                <div className="font-medium mb-1">Auto-generated:</div>
+                <div>Beancount Account: {generateBeancountAccount()}</div>
+              </div>
+            )}
 
             {/* Icon & Color */}
             <div className="grid grid-cols-2 gap-4">
