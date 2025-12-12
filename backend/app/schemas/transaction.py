@@ -56,6 +56,10 @@ class TransactionResponse(TransactionBase):
     category_id: int | None = None
     beancount_account: str | None = None
     plaid_transaction_id: str | None = None
+    plaid_primary_category: str | None = None
+    plaid_detailed_category: str | None = None
+    plaid_confidence_level: str | None = None
+    merchant_name: str | None = None
     synced_to_beancount: bool = False
     beancount_flag: str
     created_at: datetime

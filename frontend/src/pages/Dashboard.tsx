@@ -1,9 +1,14 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { accountsApi } from '@/api/accounts'
 import { transactionsApi } from '@/api/transactions'
 import { getAccountTypeInfo } from '@/utils/accountTypes'
+import TransactionDetailModal from '@/components/TransactionDetailModal'
+import type { Transaction } from '@/api/types'
 
 export default function Dashboard() {
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   // Fetch accounts
   const { data: accounts } = useQuery({
     queryKey: ['accounts'],
@@ -89,6 +94,17 @@ export default function Dashboard() {
     return `${direction}${change.toFixed(1)}% vs last month`
   }
 
+  // Handle transaction click
+  const handleTransactionClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedTransaction(null)
+  }
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
@@ -160,7 +176,11 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {recentTransactions.map((txn) => (
-                  <tr key={txn.id} className="hover:bg-gray-50">
+                  <tr
+                    key={txn.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleTransactionClick(txn)}
+                  >
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {new Date(txn.date).toLocaleDateString('en-US', {
                         month: 'short',
@@ -224,6 +244,13 @@ export default function Dashboard() {
           <div className="text-sm text-gray-400">Coming soon</div>
         </button>
       </div>
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }
