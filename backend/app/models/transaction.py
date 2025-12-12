@@ -40,6 +40,17 @@ class Transaction(Base):
     tags = Column(Text, nullable=True)  # JSON string of tags
     links = Column(Text, nullable=True)  # JSON string of links
 
+    # Plaid categorization data
+    plaid_category = Column(Text, nullable=True)  # JSON array: ["FOOD_AND_DRINK", "RESTAURANTS"]
+    plaid_primary_category = Column(String(100), nullable=True)  # e.g., "FOOD_AND_DRINK"
+    plaid_detailed_category = Column(String(100), nullable=True)  # e.g., "RESTAURANTS"
+    plaid_confidence_level = Column(String(20), nullable=True)  # e.g., "VERY_HIGH", "HIGH", "LOW"
+    merchant_name = Column(String(255), nullable=True)  # Plaid's cleaned merchant name
+
+    # Auto-categorization metadata
+    auto_categorized = Column(Boolean, default=False)  # Track if auto-categorized
+    categorization_method = Column(String(50), nullable=True)  # "plaid_mapping", "rule", "manual"
+
     # Metadata
     pending = Column(Boolean, default=False)
     reviewed = Column(Boolean, default=False)

@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -19,8 +19,9 @@ class Category(Base):
     name = Column(String(255), nullable=False, unique=True, index=True)
     display_name = Column(String(255), nullable=False)
 
-    # Hierarchy
-    parent_category = Column(String(255), nullable=True)
+    # Hierarchy - FK relationship for true parent-child structure
+    parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True, index=True)
+    parent = relationship("Category", remote_side=[id], backref="children")
 
     # Beancount mapping
     beancount_account = Column(String(255), nullable=False)
@@ -31,6 +32,15 @@ class Category(Base):
     # Display settings
     icon = Column(String(50), nullable=True)
     color = Column(String(20), nullable=True)
+    display_order = Column(Integer, default=0)  # For ordering categories in UI
+
+    # Status
+    is_active = Column(Boolean, default=True)  # Soft delete support
+    is_system = Column(Boolean, default=False)  # System categories can't be deleted
+
+    # Usage statistics
+    transaction_count = Column(Integer, default=0)  # Cached count for performance
+    last_used_at = Column(DateTime, nullable=True)  # Last time category was used
 
     # Description
     description = Column(Text, nullable=True)
