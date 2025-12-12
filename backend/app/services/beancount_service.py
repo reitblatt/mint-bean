@@ -207,6 +207,7 @@ class BeancountService:
         payee: str,
         narration: str,
         postings: list[dict[str, Any]],
+        flag: str = "*",
         tags: list[str] | None = None,
         links: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
@@ -218,23 +219,70 @@ class BeancountService:
             date: Transaction date
             payee: Payee name
             narration: Transaction description
-            postings: List of posting dictionaries with 'account' and 'amount'
+            postings: List of posting dictionaries with 'account', 'amount', and 'currency'
+            flag: Transaction flag ('*' for cleared, '!' for pending)
             tags: Optional list of tags
             links: Optional list of links
             metadata: Optional metadata dictionary
 
         Returns:
             True if successful
-
-        TODO: Implement transaction writing
-        - Format transaction in beancount syntax
-        - Append to beancount file (or include file)
-        - Handle proper indentation and formatting
-        - Optionally commit to git repo
         """
-        logger.info(f"Writing transaction: {date} - {narration}")
-        # TODO: Implement actual writing
-        return True
+        logger.info(f"Writing transaction: {date.date()} - {narration}")
+
+        try:
+            # Check if file exists
+            file_path = Path(self.file_path)
+            if not file_path.exists():
+                logger.error(f"Beancount file not found: {self.file_path}")
+                return False
+
+            # Format transaction
+            lines = []
+            lines.append("")  # Blank line before transaction
+
+            # Transaction header
+            date_str = date.strftime("%Y-%m-%d")
+            txn_line = f'{date_str} {flag} "{payee}" "{narration}"'
+
+            # Add tags
+            if tags:
+                tag_str = " ".join(f"#{tag}" for tag in tags)
+                txn_line += f" {tag_str}"
+
+            # Add links
+            if links:
+                link_str = " ".join(f"^{link}" for link in links)
+                txn_line += f" {link_str}"
+
+            lines.append(txn_line)
+
+            # Add metadata
+            if metadata:
+                for key, value in metadata.items():
+                    lines.append(f"  {key}: {value}")
+
+            # Add postings
+            for posting in postings:
+                account = posting["account"]
+                amount = posting["amount"]
+                currency = posting.get("currency", "USD")
+
+                # Format amount with 2 decimal places
+                amount_str = f"{amount:.2f}"
+                lines.append(f"  {account:<50} {amount_str:>12} {currency}")
+
+            # Append to file
+            with open(file_path, "a", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+                f.write("\n")
+
+            logger.info(f"Successfully wrote transaction to {self.file_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error writing transaction: {e}")
+            return False
 
     def update_transaction(self, transaction_id: str, updates: dict[str, Any]) -> bool:
         """
@@ -276,22 +324,147 @@ class BeancountService:
         # TODO: Implement actual syncing
         return {"added": 0, "updated": 0, "unchanged": 0}
 
-    def sync_to_file(self) -> dict[str, int]:
+    def sync_to_file(self, db) -> dict[str, int]:
         """
         Sync transactions from database to beancount file.
 
+        Args:
+            db: Database session
+
         Returns:
             Dictionary with sync statistics
-
-        TODO: Implement syncing logic
-        - Query unsynced transactions from database
-        - Write each transaction to beancount file
-        - Mark transactions as synced
-        - Return count of synced transactions
         """
+        from app.models.account import Account
+        from app.models.category import Category
+        from app.models.transaction import Transaction
+
         logger.info("Syncing from database to beancount file")
-        # TODO: Implement actual syncing
-        return {"synced": 0, "failed": 0}
+
+        synced_count = 0
+        failed_count = 0
+
+        try:
+            # Query unsynced, reviewed, non-pending transactions
+            transactions = (
+                db.query(Transaction)
+                .filter(
+                    Transaction.synced_to_beancount.is_(False),
+                    Transaction.reviewed.is_(True),
+                    Transaction.pending.is_(False),
+                )
+                .all()
+            )
+
+            logger.info(f"Found {len(transactions)} transactions to sync")
+
+            for txn in transactions:
+                try:
+                    # Get account info
+                    account = db.query(Account).filter(Account.id == txn.account_id).first()
+                    if not account:
+                        logger.warning(f"Account not found for transaction {txn.id}")
+                        failed_count += 1
+                        continue
+
+                    # Get category info
+                    category = None
+                    if txn.category_id:
+                        category = db.query(Category).filter(Category.id == txn.category_id).first()
+
+                    # Build postings
+                    postings = []
+
+                    # Posting 1: Account (where money moved from/to)
+                    postings.append(
+                        {
+                            "account": account.beancount_account,
+                            "amount": txn.amount,
+                            "currency": txn.currency,
+                        }
+                    )
+
+                    # Posting 2: Category (expense/income) or default
+                    if category:
+                        category_amount = -txn.amount  # Opposite sign for double-entry
+                        postings.append(
+                            {
+                                "account": category.beancount_account,
+                                "amount": category_amount,
+                                "currency": txn.currency,
+                            }
+                        )
+                    else:
+                        # Use a default "Uncategorized" account
+                        category_amount = -txn.amount
+                        default_account = (
+                            "Expenses:Uncategorized" if txn.amount < 0 else "Income:Uncategorized"
+                        )
+                        postings.append(
+                            {
+                                "account": default_account,
+                                "amount": category_amount,
+                                "currency": txn.currency,
+                            }
+                        )
+
+                    # Prepare tags and metadata
+                    tags = []
+                    if txn.tags:
+                        try:
+                            import json
+
+                            tags = json.loads(txn.tags) if isinstance(txn.tags, str) else txn.tags
+                        except Exception:
+                            pass
+
+                    links = []
+                    if txn.links:
+                        try:
+                            import json
+
+                            links = (
+                                json.loads(txn.links) if isinstance(txn.links, str) else txn.links
+                            )
+                        except Exception:
+                            pass
+
+                    metadata = {"mintbean_id": txn.transaction_id}
+                    if txn.plaid_transaction_id:
+                        metadata["plaid_id"] = txn.plaid_transaction_id
+
+                    # Write transaction
+                    success = self.write_transaction(
+                        date=txn.date,
+                        payee=txn.payee or "",
+                        narration=txn.description,
+                        postings=postings,
+                        flag=txn.beancount_flag,
+                        tags=tags,
+                        links=links,
+                        metadata=metadata,
+                    )
+
+                    if success:
+                        # Mark as synced
+                        txn.synced_to_beancount = True
+                        synced_count += 1
+                    else:
+                        failed_count += 1
+
+                except Exception as e:
+                    logger.error(f"Error syncing transaction {txn.id}: {e}")
+                    failed_count += 1
+
+            # Commit the synced flags
+            db.commit()
+
+            logger.info(f"Sync complete: {synced_count} synced, {failed_count} failed")
+            return {"synced": synced_count, "failed": failed_count}
+
+        except Exception as e:
+            logger.error(f"Error during sync: {e}")
+            db.rollback()
+            return {"synced": synced_count, "failed": failed_count}
 
     def validate_file(self) -> dict[str, Any]:
         """

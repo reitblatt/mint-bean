@@ -2,7 +2,15 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import accounts, categories, plaid, plaid_category_mappings, rules, transactions
+from app.api.v1 import (
+    accounts,
+    beancount,
+    categories,
+    plaid,
+    plaid_category_mappings,
+    rules,
+    transactions,
+)
 
 api_router = APIRouter()
 
@@ -21,3 +29,5 @@ api_router.include_router(
     prefix="/plaid-category-mappings",
     tags=["plaid-category-mappings"],
 )
+
+api_router.include_router(beancount.router, prefix="/beancount", tags=["beancount"])

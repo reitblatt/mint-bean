@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountsApi } from '@/api/accounts'
 import { transactionsApi } from '@/api/transactions'
+import { beancountApi } from '@/api/beancount'
 import { getAccountTypeInfo } from '@/utils/accountTypes'
 import TransactionDetailModal from '@/components/TransactionDetailModal'
 import type { Transaction } from '@/api/types'
 
 export default function Dashboard() {
+  const queryClient = useQueryClient()
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   // Fetch accounts
@@ -19,6 +21,13 @@ export default function Dashboard() {
   const { data: recentTransactionsResponse } = useQuery({
     queryKey: ['transactions', { limit: 10 }],
     queryFn: () => transactionsApi.list({ limit: 10 }),
+  })
+
+  // Fetch unsynced count
+  const { data: unsyncedData } = useQuery({
+    queryKey: ['beancount', 'unsynced-count'],
+    queryFn: () => beancountApi.getUnsyncedCount(),
+    refetchInterval: 30000, // Refetch every 30 seconds
   })
 
   // Fetch all transactions for calculations
@@ -103,6 +112,27 @@ export default function Dashboard() {
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedTransaction(null)
+  }
+
+  // Sync to beancount mutation
+  const syncMutation = useMutation({
+    mutationFn: beancountApi.syncToFile,
+    onSuccess: (data) => {
+      // Refetch transactions and unsynced count
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['beancount', 'unsynced-count'] })
+
+      alert(data.message)
+    },
+    onError: (error: any) => {
+      alert(`Sync failed: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const handleSyncToBeancount = () => {
+    if (confirm(`Sync ${unsyncedData?.count || 0} transaction(s) to Beancount file?`)) {
+      syncMutation.mutate()
+    }
   }
 
   return (
@@ -239,9 +269,25 @@ export default function Dashboard() {
           </div>
         </a>
 
-        <button className="card hover:shadow-md transition-shadow text-left" disabled>
-          <div className="font-medium text-gray-400 mb-1">Sync to Beancount</div>
-          <div className="text-sm text-gray-400">Coming soon</div>
+        <button
+          className="card hover:shadow-md transition-shadow text-left"
+          onClick={handleSyncToBeancount}
+          disabled={syncMutation.isPending || (unsyncedData?.count || 0) === 0}
+        >
+          <div
+            className={`font-medium mb-1 ${
+              (unsyncedData?.count || 0) === 0 ? 'text-gray-400' : 'text-gray-900'
+            }`}
+          >
+            Sync to Beancount
+          </div>
+          <div className="text-sm text-gray-600">
+            {syncMutation.isPending
+              ? 'Syncing...'
+              : unsyncedData?.count
+                ? `${unsyncedData.count} transaction${unsyncedData.count !== 1 ? 's' : ''} ready`
+                : 'No transactions to sync'}
+          </div>
         </button>
       </div>
 
