@@ -40,6 +40,62 @@ def list_categories(
     return query.order_by(Category.name).all()
 
 
+@router.get("/tree", response_model=list[CategoryTreeNode])
+def get_category_tree(
+    category_type: str | None = None,
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+) -> list[CategoryTreeNode]:
+    """
+    Get category hierarchy as a tree structure.
+
+    Args:
+        category_type: Filter by category type (expense, income, transfer)
+        include_inactive: Include inactive categories
+        db: Database session
+
+    Returns:
+        List of root category nodes with nested children
+    """
+    # Query all categories
+    query = db.query(Category)
+    if category_type:
+        query = query.filter(Category.category_type == category_type)
+    if not include_inactive:
+        query = query.filter(Category.is_active.is_(True))
+
+    categories = query.order_by(Category.display_order, Category.name).all()
+
+    # Helper function to build tree recursively
+    def build_tree_node(category: Category) -> CategoryTreeNode:
+        node = CategoryTreeNode(
+            id=category.id,
+            name=category.name,
+            display_name=category.display_name,
+            category_type=category.category_type,
+            icon=category.icon,
+            color=category.color,
+            parent_id=category.parent_id,
+            transaction_count=category.transaction_count,
+            children=[],
+        )
+
+        # Find children
+        for cat in categories:
+            if cat.parent_id == category.id:
+                node.children.append(build_tree_node(cat))
+
+        return node
+
+    # Build tree starting from root nodes (categories with no parent)
+    tree = []
+    for category in categories:
+        if category.parent_id is None:
+            tree.append(build_tree_node(category))
+
+    return tree
+
+
 @router.get("/{category_id}", response_model=CategoryResponse)
 def get_category(
     category_id: int,
@@ -136,62 +192,6 @@ def delete_category(
     # Soft delete by marking as inactive
     db_category.is_active = False
     db.commit()
-
-
-@router.get("/tree", response_model=list[CategoryTreeNode])
-def get_category_tree(
-    category_type: str | None = None,
-    include_inactive: bool = False,
-    db: Session = Depends(get_db),
-) -> list[CategoryTreeNode]:
-    """
-    Get category hierarchy as a tree structure.
-
-    Args:
-        category_type: Filter by category type (expense, income, transfer)
-        include_inactive: Include inactive categories
-        db: Database session
-
-    Returns:
-        List of root category nodes with nested children
-    """
-    # Query all categories
-    query = db.query(Category)
-    if category_type:
-        query = query.filter(Category.category_type == category_type)
-    if not include_inactive:
-        query = query.filter(Category.is_active.is_(True))
-
-    categories = query.order_by(Category.display_order, Category.name).all()
-
-    # Helper function to build tree recursively
-    def build_tree_node(category: Category) -> CategoryTreeNode:
-        node = CategoryTreeNode(
-            id=category.id,
-            name=category.name,
-            display_name=category.display_name,
-            category_type=category.category_type,
-            icon=category.icon,
-            color=category.color,
-            parent_id=category.parent_id,
-            transaction_count=category.transaction_count,
-            children=[],
-        )
-
-        # Find children
-        for cat in categories:
-            if cat.parent_id == category.id:
-                node.children.append(build_tree_node(cat))
-
-        return node
-
-    # Build tree starting from root nodes (categories with no parent)
-    tree = []
-    for category in categories:
-        if category.parent_id is None:
-            tree.append(build_tree_node(category))
-
-    return tree
 
 
 @router.post("/merge", response_model=CategoryResponse)
