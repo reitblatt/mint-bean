@@ -131,6 +131,7 @@ export default function Categories() {
                   onSelect={setSelectedCategory}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  showTypeTag={categoryTypeFilter === ''}
                 />
               )}
             </div>

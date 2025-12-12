@@ -7,6 +7,7 @@ interface CategoryTreeProps {
   onSelect?: (node: CategoryTreeNode) => void
   onEdit?: (node: CategoryTreeNode) => void
   onDelete?: (node: CategoryTreeNode) => void
+  showTypeTag?: boolean
 }
 
 interface CategoryNodeProps {
@@ -16,6 +17,7 @@ interface CategoryNodeProps {
   onSelect?: (node: CategoryTreeNode) => void
   onEdit?: (node: CategoryTreeNode) => void
   onDelete?: (node: CategoryTreeNode) => void
+  showTypeTag?: boolean
 }
 
 function CategoryNode({
@@ -25,6 +27,7 @@ function CategoryNode({
   onSelect,
   onEdit,
   onDelete,
+  showTypeTag = true,
 }: CategoryNodeProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const hasChildren = node.children && node.children.length > 0
@@ -85,14 +88,16 @@ function CategoryNode({
         <div className="flex-1 flex items-center gap-3">
           <span className="font-medium text-gray-900">{node.display_name}</span>
 
-          {/* Type Badge */}
-          <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-              categoryTypeColors[node.category_type] || 'text-gray-600 bg-gray-100'
-            }`}
-          >
-            {node.category_type}
-          </span>
+          {/* Type Badge - only show if showTypeTag is true */}
+          {showTypeTag && (
+            <span
+              className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                categoryTypeColors[node.category_type] || 'text-gray-600 bg-gray-100'
+              }`}
+            >
+              {node.category_type}
+            </span>
+          )}
 
           {/* Transaction Count */}
           {node.transaction_count > 0 && (
@@ -151,6 +156,7 @@ function CategoryNode({
               onSelect={onSelect}
               onEdit={onEdit}
               onDelete={onDelete}
+              showTypeTag={showTypeTag}
             />
           ))}
         </div>
@@ -165,6 +171,7 @@ export default function CategoryTree({
   onSelect,
   onEdit,
   onDelete,
+  showTypeTag = true,
 }: CategoryTreeProps) {
   if (!nodes || nodes.length === 0) {
     return (
@@ -186,6 +193,7 @@ export default function CategoryTree({
           onSelect={onSelect}
           onEdit={onEdit}
           onDelete={onDelete}
+          showTypeTag={showTypeTag}
         />
       ))}
     </div>
