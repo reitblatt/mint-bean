@@ -1,5 +1,6 @@
 """Plaid integration service."""
 
+import json
 import logging
 from datetime import UTC, datetime
 
@@ -297,6 +298,44 @@ class PlaidService:
                     )
 
                     if not existing:
+                        # Extract Plaid category information
+                        plaid_category_json = None
+                        plaid_primary = None
+                        plaid_detailed = None
+                        plaid_confidence = None
+
+                        if (
+                            hasattr(plaid_txn, "personal_finance_category")
+                            and plaid_txn.personal_finance_category
+                        ):
+                            try:
+                                pfc = plaid_txn.personal_finance_category
+                                plaid_primary = pfc.primary if hasattr(pfc, "primary") else None
+                                plaid_detailed = pfc.detailed if hasattr(pfc, "detailed") else None
+                                plaid_confidence = (
+                                    pfc.confidence_level
+                                    if hasattr(pfc, "confidence_level")
+                                    else None
+                                )
+                                # Validate we got actual strings, not Mock objects
+                                if not isinstance(plaid_primary, str | type(None)):
+                                    plaid_primary = None
+                                if not isinstance(plaid_detailed, str | type(None)):
+                                    plaid_detailed = None
+                                if not isinstance(plaid_confidence, str | type(None)):
+                                    plaid_confidence = None
+                            except (AttributeError, TypeError):
+                                # Skip if not accessible (e.g., Mock object)
+                                pass
+
+                        # Also store legacy category array if available
+                        if hasattr(plaid_txn, "category") and plaid_txn.category:
+                            try:
+                                plaid_category_json = json.dumps(plaid_txn.category)
+                            except (TypeError, ValueError):
+                                # Skip if not JSON serializable (e.g., Mock object)
+                                pass
+
                         transaction = Transaction(
                             transaction_id=f"plaid_{plaid_txn.transaction_id}",
                             plaid_transaction_id=plaid_txn.transaction_id,
@@ -309,6 +348,12 @@ class PlaidService:
                             pending=plaid_txn.pending,
                             reviewed=False,
                             synced_to_beancount=False,
+                            # Plaid categorization data
+                            plaid_category=plaid_category_json,
+                            plaid_primary_category=plaid_primary,
+                            plaid_detailed_category=plaid_detailed,
+                            plaid_confidence_level=plaid_confidence,
+                            merchant_name=plaid_txn.merchant_name,
                         )
                         db.add(transaction)
                         added_count += 1
@@ -332,12 +377,56 @@ class PlaidService:
                                 f"pending → completed"
                             )
 
+                        # Extract Plaid category information
+                        plaid_category_json = None
+                        plaid_primary = None
+                        plaid_detailed = None
+                        plaid_confidence = None
+
+                        if (
+                            hasattr(plaid_txn, "personal_finance_category")
+                            and plaid_txn.personal_finance_category
+                        ):
+                            try:
+                                pfc = plaid_txn.personal_finance_category
+                                plaid_primary = pfc.primary if hasattr(pfc, "primary") else None
+                                plaid_detailed = pfc.detailed if hasattr(pfc, "detailed") else None
+                                plaid_confidence = (
+                                    pfc.confidence_level
+                                    if hasattr(pfc, "confidence_level")
+                                    else None
+                                )
+                                # Validate we got actual strings, not Mock objects
+                                if not isinstance(plaid_primary, str | type(None)):
+                                    plaid_primary = None
+                                if not isinstance(plaid_detailed, str | type(None)):
+                                    plaid_detailed = None
+                                if not isinstance(plaid_confidence, str | type(None)):
+                                    plaid_confidence = None
+                            except (AttributeError, TypeError):
+                                # Skip if not accessible (e.g., Mock object)
+                                pass
+
+                        # Also store legacy category array if available
+                        if hasattr(plaid_txn, "category") and plaid_txn.category:
+                            try:
+                                plaid_category_json = json.dumps(plaid_txn.category)
+                            except (TypeError, ValueError):
+                                # Skip if not JSON serializable (e.g., Mock object)
+                                pass
+
                         existing.date = plaid_txn.date
                         existing.description = plaid_txn.name
                         existing.payee = plaid_txn.merchant_name or plaid_txn.name
                         existing.amount = -plaid_txn.amount
                         existing.pending = plaid_txn.pending
                         existing.updated_at = datetime.now(UTC)
+                        # Update Plaid category fields
+                        existing.plaid_category = plaid_category_json
+                        existing.plaid_primary_category = plaid_primary
+                        existing.plaid_detailed_category = plaid_detailed
+                        existing.plaid_confidence_level = plaid_confidence
+                        existing.merchant_name = plaid_txn.merchant_name
                         modified_count += 1
 
                 # Process removed transactions
