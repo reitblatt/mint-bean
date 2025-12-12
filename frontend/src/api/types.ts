@@ -107,3 +107,30 @@ export interface TransactionFilters {
   end_date?: string
   search?: string
 }
+
+export interface PlaidCategoryMapping {
+  id: number
+  plaid_primary_category: string
+  plaid_detailed_category?: string
+  category_id: number
+  confidence: number
+  auto_apply: boolean
+  match_count: number
+  last_matched_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PlaidCategoryMappingCreate {
+  plaid_primary_category: string
+  plaid_detailed_category?: string
+  category_id: number
+  confidence?: number
+  auto_apply?: boolean
+}
+
+export interface PlaidCategoryMappingUpdate {
+  category_id?: number
+  confidence?: number
+  auto_apply?: boolean
+}
