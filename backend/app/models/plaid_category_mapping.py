@@ -2,7 +2,16 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -52,4 +61,6 @@ class PlaidCategoryMapping(Base):
     def __repr__(self) -> str:
         """String representation of mapping."""
         detailed = f":{self.plaid_detailed_category}" if self.plaid_detailed_category else ""
-        return f"<PlaidCategoryMapping {self.plaid_primary_category}{detailed} → {self.category_id}>"
+        return (
+            f"<PlaidCategoryMapping {self.plaid_primary_category}{detailed} → {self.category_id}>"
+        )
