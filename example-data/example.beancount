@@ -344,3 +344,39 @@ option "operating_currency" "USD"
 ; Note: Remove or adjust these balance assertions based on actual calculated balances
 ; 2024-03-31 balance Assets:Bank:Chase:Checking      XXXX.XX USD
 ; 2024-03-31 balance Assets:Bank:Chase:Savings       XXXX.XX USD
+
+2025-09-14 * "United Airlines" "United Airlines"
+  mintbean_id: plaid_PqqbbJ9LxqFenoKmK6EqsQDkXvWqpwfXaDxR7
+  plaid_id: PqqbbJ9LxqFenoKmK6EqsQDkXvWqpwfXaDxR7
+  Assets:Capital One:PlaidChecking                         500.00 USD
+  Income:Uncategorized                                    -500.00 USD
+
+2025-09-13 * "McDonald's" "McDonald's"
+  mintbean_id: plaid_jAAbbv1R9AUdbGanaQMKcR4rjGzBAbfvd5Ne6
+  plaid_id: jAAbbv1R9AUdbGanaQMKcR4rjGzBAbfvd5Ne6
+  Assets:Capital One:PlaidChecking                         -12.00 USD
+  Expenses:Uncategorized                                    12.00 USD
+
+2025-09-16 * "CREDIT CARD 3333 PAYMENT *//" "CREDIT CARD 3333 PAYMENT *//"
+  mintbean_id: plaid_pzz55vE6yzSbRGymyoJwiaJMqyXQVzfJG47d8
+  plaid_id: pzz55vE6yzSbRGymyoJwiaJMqyXQVzfJG47d8
+  Assets:Capital One:PlaidSaving                           -25.00 USD
+  Expenses:Uncategorized                                    25.00 USD
+
+2025-09-14 * "Touchstone Climbing" "Touchstone Climbing"
+  mintbean_id: plaid_J88EEJAyq8s8MdpAp76XHbX4Q5kWpxcQ3ElGD
+  plaid_id: J88EEJAyq8s8MdpAp76XHbX4Q5kWpxcQ3ElGD
+  Assets:Capital One:PlaidCreditCard                       -78.50 USD
+  Expenses:Uncategorized                                    78.50 USD
+
+2025-12-12 * "McDonald's" "McDonald's"
+  mintbean_id: plaid_VxxWWBVzjxIwnLRkR3aEIVxRWo4gAktqKZrlm
+  plaid_id: VxxWWBVzjxIwnLRkR3aEIVxRWo4gAktqKZrlm
+  Assets:Capital One:PlaidChecking                         -12.00 USD
+  Expenses:Uncategorized                                    12.00 USD
+
+2025-12-12 * "Starbucks" "Starbucks"
+  mintbean_id: plaid_wNNKKvy6GNIxQprkrnRNIJeLv7Q8WbcEW18M9
+  plaid_id: wNNKKvy6GNIxQprkrnRNIJeLv7Q8WbcEW18M9
+  Assets:Capital One:PlaidChecking                          -4.33 USD
+  Expenses:Uncategorized                                     4.33 USD

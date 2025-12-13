@@ -1,7 +1,9 @@
 """Beancount API endpoints."""
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -10,52 +12,59 @@ from app.services.beancount_service import BeancountService
 router = APIRouter()
 
 
-class SyncResponse(BaseModel):
-    """Response model for sync operation."""
-
-    synced: int
-    failed: int
-    message: str
-
-
-@router.post("/sync-to-file", response_model=SyncResponse)
-def sync_to_beancount_file(db: Session = Depends(get_db)):
+@router.get("/export")
+def export_beancount_file(
+    db: Session = Depends(get_db),
+    reviewed_only: bool = True,
+    exclude_pending: bool = True,
+):
     """
-    Sync reviewed, non-pending transactions from database to Beancount file.
+    Export transactions to Beancount format for download.
 
-    This will:
-    - Find all transactions that are reviewed, not pending, and not yet synced
-    - Write them to the Beancount file in proper format
-    - Mark them as synced in the database
+    Args:
+        reviewed_only: Only export reviewed transactions (default: True)
+        exclude_pending: Exclude pending transactions (default: True)
+
+    Returns:
+        Beancount file content as plain text
     """
     service = BeancountService()
 
     try:
-        result = service.sync_to_file(db)
+        content = service.generate_beancount_content(
+            db, reviewed_only=reviewed_only, exclude_pending=exclude_pending
+        )
 
-        message = f"Successfully synced {result['synced']} transaction(s)"
-        if result["failed"] > 0:
-            message += f", {result['failed']} failed"
+        # Generate filename with current date
+        filename = f"transactions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.beancount"
 
-        return SyncResponse(synced=result["synced"], failed=result["failed"], message=message)
+        return Response(
+            content=content,
+            media_type="text/plain",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}") from e
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}") from e
 
 
-@router.get("/unsynced-count")
-def get_unsynced_count(db: Session = Depends(get_db)):
-    """Get count of transactions ready to be synced to Beancount."""
+@router.get("/export-count")
+def get_export_count(
+    db: Session = Depends(get_db),
+    reviewed_only: bool = True,
+    exclude_pending: bool = True,
+):
+    """Get count of transactions that would be exported."""
     from app.models.transaction import Transaction
 
-    count = (
-        db.query(Transaction)
-        .filter(
-            Transaction.synced_to_beancount.is_(False),
-            Transaction.reviewed.is_(True),
-            Transaction.pending.is_(False),
-        )
-        .count()
-    )
+    query = db.query(Transaction)
+
+    if reviewed_only:
+        query = query.filter(Transaction.reviewed.is_(True))
+
+    if exclude_pending:
+        query = query.filter(Transaction.pending.is_(False))
+
+    count = query.count()
 
     return {"count": count}

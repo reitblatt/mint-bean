@@ -306,6 +306,168 @@ class BeancountService:
         # TODO: Implement actual updating
         return True
 
+    def generate_beancount_content(
+        self, db, reviewed_only: bool = True, exclude_pending: bool = True
+    ) -> str:
+        """
+        Generate Beancount file content from database transactions.
+
+        Args:
+            db: Database session
+            reviewed_only: Only include reviewed transactions
+            exclude_pending: Exclude pending transactions
+
+        Returns:
+            String content of Beancount file
+        """
+        from app.models.account import Account
+        from app.models.category import Category
+        from app.models.transaction import Transaction
+
+        logger.info("Generating Beancount content from database")
+
+        lines = []
+        lines.append("; Exported from MintBean")
+        lines.append(f"; Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+
+        try:
+            # Query transactions based on filters
+            query = db.query(Transaction)
+
+            if reviewed_only:
+                query = query.filter(Transaction.reviewed.is_(True))
+
+            if exclude_pending:
+                query = query.filter(Transaction.pending.is_(False))
+
+            # Order by date
+            transactions = query.order_by(Transaction.date).all()
+
+            logger.info(f"Found {len(transactions)} transactions to export")
+
+            for txn in transactions:
+                try:
+                    # Get account info
+                    account = db.query(Account).filter(Account.id == txn.account_id).first()
+                    if not account:
+                        logger.warning(f"Account not found for transaction {txn.id}")
+                        continue
+
+                    # Get category info
+                    category = None
+                    if txn.category_id:
+                        category = db.query(Category).filter(Category.id == txn.category_id).first()
+
+                    # Build postings
+                    postings = []
+
+                    # Posting 1: Account (where money moved from/to)
+                    postings.append(
+                        {
+                            "account": account.beancount_account,
+                            "amount": txn.amount,
+                            "currency": txn.currency,
+                        }
+                    )
+
+                    # Posting 2: Category (expense/income) or default
+                    if category:
+                        category_amount = -txn.amount  # Opposite sign for double-entry
+                        postings.append(
+                            {
+                                "account": category.beancount_account,
+                                "amount": category_amount,
+                                "currency": txn.currency,
+                            }
+                        )
+                    else:
+                        # Use a default "Uncategorized" account
+                        category_amount = -txn.amount
+                        default_account = (
+                            "Expenses:Uncategorized" if txn.amount < 0 else "Income:Uncategorized"
+                        )
+                        postings.append(
+                            {
+                                "account": default_account,
+                                "amount": category_amount,
+                                "currency": txn.currency,
+                            }
+                        )
+
+                    # Prepare tags and metadata
+                    tags = []
+                    if txn.tags:
+                        try:
+                            import json
+
+                            tags = json.loads(txn.tags) if isinstance(txn.tags, str) else txn.tags
+                        except Exception:
+                            pass
+
+                    links = []
+                    if txn.links:
+                        try:
+                            import json
+
+                            links = (
+                                json.loads(txn.links) if isinstance(txn.links, str) else txn.links
+                            )
+                        except Exception:
+                            pass
+
+                    metadata = {"mintbean_id": txn.transaction_id}
+                    if txn.plaid_transaction_id:
+                        metadata["plaid_id"] = txn.plaid_transaction_id
+
+                    # Format transaction
+                    lines.append("")  # Blank line before transaction
+
+                    # Transaction header
+                    date_str = txn.date.strftime("%Y-%m-%d")
+                    txn_line = (
+                        f'{date_str} {txn.beancount_flag} "{txn.payee or ""}" "{txn.description}"'
+                    )
+
+                    # Add tags
+                    if tags:
+                        tag_str = " ".join(f"#{tag}" for tag in tags)
+                        txn_line += f" {tag_str}"
+
+                    # Add links
+                    if links:
+                        link_str = " ".join(f"^{link}" for link in links)
+                        txn_line += f" {link_str}"
+
+                    lines.append(txn_line)
+
+                    # Add metadata
+                    if metadata:
+                        for key, value in metadata.items():
+                            lines.append(f"  {key}: {value}")
+
+                    # Add postings
+                    for posting in postings:
+                        account_name = posting["account"]
+                        amount = posting["amount"]
+                        currency = posting.get("currency", "USD")
+
+                        # Format amount with 2 decimal places
+                        amount_str = f"{amount:.2f}"
+                        lines.append(f"  {account_name:<50} {amount_str:>12} {currency}")
+
+                except Exception as e:
+                    logger.error(f"Error formatting transaction {txn.id}: {e}")
+                    continue
+
+            content = "\n".join(lines) + "\n"
+            logger.info("Successfully generated Beancount content")
+            return content
+
+        except Exception as e:
+            logger.error(f"Error generating Beancount content: {e}")
+            raise
+
     def sync_from_file(self) -> dict[str, int]:
         """
         Sync transactions from beancount file to database.

@@ -38,7 +38,7 @@ export default function TransactionDetailModal({
       transactionsApi.update(transaction!.id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['beancount', 'unsynced-count'] })
+      queryClient.invalidateQueries({ queryKey: ['beancount', 'export-count'] })
       setEditMode(false)
       // Don't close modal automatically - let user close it
     },

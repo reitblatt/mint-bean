@@ -1,23 +1,28 @@
 import { apiClient } from './client'
 
-export interface SyncResponse {
-  synced: number
-  failed: number
-  message: string
-}
-
-export interface UnsyncedCountResponse {
+export interface ExportCountResponse {
   count: number
 }
 
 export const beancountApi = {
-  syncToFile: async (): Promise<SyncResponse> => {
-    const response = await apiClient.post('/beancount/sync-to-file')
+  exportFile: async (reviewedOnly = true, excludePending = true): Promise<Blob> => {
+    const response = await apiClient.get('/beancount/export', {
+      params: {
+        reviewed_only: reviewedOnly,
+        exclude_pending: excludePending,
+      },
+      responseType: 'blob',
+    })
     return response.data
   },
 
-  getUnsyncedCount: async (): Promise<UnsyncedCountResponse> => {
-    const response = await apiClient.get('/beancount/unsynced-count')
+  getExportCount: async (reviewedOnly = true, excludePending = true): Promise<ExportCountResponse> => {
+    const response = await apiClient.get('/beancount/export-count', {
+      params: {
+        reviewed_only: reviewedOnly,
+        exclude_pending: excludePending,
+      },
+    })
     return response.data
   },
 }

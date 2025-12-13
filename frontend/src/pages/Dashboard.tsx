@@ -23,10 +23,10 @@ export default function Dashboard() {
     queryFn: () => transactionsApi.list({ limit: 10 }),
   })
 
-  // Fetch unsynced count
-  const { data: unsyncedData } = useQuery({
-    queryKey: ['beancount', 'unsynced-count'],
-    queryFn: () => beancountApi.getUnsyncedCount(),
+  // Fetch export count
+  const { data: exportData } = useQuery({
+    queryKey: ['beancount', 'export-count'],
+    queryFn: () => beancountApi.getExportCount(),
     refetchInterval: 30000, // Refetch every 30 seconds
   })
 
@@ -114,25 +114,27 @@ export default function Dashboard() {
     setSelectedTransaction(null)
   }
 
-  // Sync to beancount mutation
-  const syncMutation = useMutation({
-    mutationFn: beancountApi.syncToFile,
-    onSuccess: (data) => {
-      // Refetch transactions and unsynced count
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['beancount', 'unsynced-count'] })
-
-      alert(data.message)
+  // Export to beancount mutation
+  const exportMutation = useMutation({
+    mutationFn: () => beancountApi.exportFile(),
+    onSuccess: (blob) => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `transactions_${new Date().toISOString().split('T')[0]}.beancount`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     },
     onError: (error: any) => {
-      alert(`Sync failed: ${error.response?.data?.detail || error.message}`)
+      alert(`Export failed: ${error.response?.data?.detail || error.message}`)
     },
   })
 
-  const handleSyncToBeancount = () => {
-    if (confirm(`Sync ${unsyncedData?.count || 0} transaction(s) to Beancount file?`)) {
-      syncMutation.mutate()
-    }
+  const handleExportToBeancount = () => {
+    exportMutation.mutate()
   }
 
   return (
@@ -271,22 +273,22 @@ export default function Dashboard() {
 
         <button
           className="card hover:shadow-md transition-shadow text-left"
-          onClick={handleSyncToBeancount}
-          disabled={syncMutation.isPending || (unsyncedData?.count || 0) === 0}
+          onClick={handleExportToBeancount}
+          disabled={exportMutation.isPending || (exportData?.count || 0) === 0}
         >
           <div
             className={`font-medium mb-1 ${
-              (unsyncedData?.count || 0) === 0 ? 'text-gray-400' : 'text-gray-900'
+              (exportData?.count || 0) === 0 ? 'text-gray-400' : 'text-gray-900'
             }`}
           >
-            Sync to Beancount
+            Export to Beancount
           </div>
           <div className="text-sm text-gray-600">
-            {syncMutation.isPending
-              ? 'Syncing...'
-              : unsyncedData?.count
-                ? `${unsyncedData.count} transaction${unsyncedData.count !== 1 ? 's' : ''} ready`
-                : 'No transactions to sync'}
+            {exportMutation.isPending
+              ? 'Exporting...'
+              : exportData?.count
+                ? `${exportData.count} transaction${exportData.count !== 1 ? 's' : ''} ready`
+                : 'No transactions to export'}
           </div>
         </button>
       </div>
