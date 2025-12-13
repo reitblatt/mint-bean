@@ -26,7 +26,8 @@
       "Bash(if [ -f .env ])",
       "Bash(then echo \"=== .env exists ===\")",
       "Bash(else echo \".env file not found\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(find:*)"
     ]
   }
 }

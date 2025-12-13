@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
+    # JWT Authentication
+    JWT_SECRET_KEY: str = "change-me-in-production-jwt-secret"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     # Database
     DATABASE_URL: str = "sqlite:///./data/mintbean.db"
 
