@@ -40,7 +40,7 @@ export default function TransactionDetailModal({
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['beancount', 'unsynced-count'] })
       setEditMode(false)
-      onClose()
+      // Don't close modal automatically - let user close it
     },
   })
 
@@ -60,7 +60,11 @@ export default function TransactionDetailModal({
   const account = accounts?.find((a) => a.id === transaction.account_id)
 
   const handleSave = () => {
-    updateMutation.mutate(editedTransaction)
+    updateMutation.mutate(editedTransaction, {
+      onSuccess: () => {
+        onClose()
+      },
+    })
   }
 
   const handleCancel = () => {
