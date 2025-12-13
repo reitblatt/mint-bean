@@ -17,8 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.core.auth import get_password_hash  # noqa: E402
-from app.core.database import SessionLocal, engine  # noqa: E402
-from app.models import Base, User  # noqa: E402
+from app.core.database import Base, SessionLocal, engine  # noqa: E402
+from app.models.user import User  # noqa: E402
 
 
 def create_admin():
