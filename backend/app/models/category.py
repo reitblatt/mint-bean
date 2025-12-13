@@ -14,6 +14,7 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Category identification
     name = Column(String(255), nullable=False, unique=True, index=True)
@@ -55,6 +56,7 @@ class Category(Base):
     )
 
     # Relationships
+    user = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
 
     def __repr__(self) -> str:

@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -23,6 +24,16 @@ class User(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
         nullable=False,
+    )
+
+    # Relationships
+    accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
+    categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+    rules = relationship("Rule", back_populates="user", cascade="all, delete-orphan")
+    plaid_items = relationship("PlaidItem", back_populates="user", cascade="all, delete-orphan")
+    plaid_category_mappings = relationship(
+        "PlaidCategoryMapping", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self):

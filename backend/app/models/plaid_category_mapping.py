@@ -23,10 +23,14 @@ class PlaidCategoryMapping(Base):
     __tablename__ = "plaid_category_mappings"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Plaid category identifiers
     plaid_primary_category = Column(String(100), nullable=False, index=True)
     plaid_detailed_category = Column(String(100), nullable=True, index=True)
+
+    # Relationships
+    user = relationship("User", back_populates="plaid_category_mappings")
 
     # Mapping configuration
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
@@ -49,12 +53,13 @@ class PlaidCategoryMapping(Base):
         nullable=False,
     )
 
-    # Unique constraint on plaid category combination
+    # Unique constraint on plaid category combination per user
     __table_args__ = (
         UniqueConstraint(
+            "user_id",
             "plaid_primary_category",
             "plaid_detailed_category",
-            name="uix_plaid_category",
+            name="uix_user_plaid_category",
         ),
     )
 

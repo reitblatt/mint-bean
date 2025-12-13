@@ -14,10 +14,14 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Transaction identification
     transaction_id = Column(String(255), unique=True, index=True, nullable=False)
     plaid_transaction_id = Column(String(255), unique=True, index=True, nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="transactions")
 
     # Account reference
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)

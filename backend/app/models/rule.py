@@ -14,6 +14,7 @@ class Rule(Base):
     __tablename__ = "rules"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Rule identification
     name = Column(String(255), nullable=False)
@@ -26,6 +27,9 @@ class Rule(Base):
     # Actions (JSON string containing actions to take)
     # Example: {"set_category": "Shopping:Online", "set_payee": "Amazon"}
     actions = Column(Text, nullable=False)
+
+    # Relationships
+    user = relationship("User", back_populates="rules")
 
     # Target category
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)

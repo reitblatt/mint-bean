@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -14,6 +14,7 @@ class Account(Base):
     __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Account identification
     account_id = Column(String(255), unique=True, index=True, nullable=False)
@@ -53,6 +54,7 @@ class Account(Base):
     )
 
     # Relationships
+    user = relationship("User", back_populates="accounts")
     transactions = relationship(
         "Transaction", back_populates="account", cascade="all, delete-orphan"
     )
