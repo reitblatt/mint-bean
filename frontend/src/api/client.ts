@@ -12,11 +12,11 @@ export const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // TODO: Add authentication token if needed
-    // const token = getAuthToken()
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // Add authentication token if available
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {
@@ -30,8 +30,12 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      // TODO: Handle unauthorized (redirect to login, etc.)
-      console.error('Unauthorized')
+      // Handle unauthorized - clear auth and redirect to login
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     } else if (error.response?.status === 500) {
       console.error('Server error:', error.response.data)
     }

@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import clsx from 'clsx'
+import { useAuth } from '@/contexts/AuthContext'
 
 const navigation = [
   { name: 'Dashboard', path: '/' },
@@ -12,6 +13,7 @@ const navigation = [
 
 export default function Layout() {
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,7 +52,15 @@ export default function Layout() {
 
           {/* User section */}
           <div className="p-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">Connected to Beancount</div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">{user?.email}</div>
+              <button
+                onClick={logout}
+                className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
