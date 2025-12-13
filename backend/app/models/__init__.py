@@ -2,8 +2,18 @@
 
 from app.models.account import Account
 from app.models.category import Category
+from app.models.plaid_category_mapping import PlaidCategoryMapping
+from app.models.plaid_item import PlaidItem
 from app.models.rule import Rule
 from app.models.transaction import Transaction
 from app.models.user import User
 
-__all__ = ["Transaction", "Account", "Category", "Rule", "User"]
+__all__ = [
+    "Account",
+    "Category",
+    "PlaidCategoryMapping",
+    "PlaidItem",
+    "Rule",
+    "Transaction",
+    "User",
+]
