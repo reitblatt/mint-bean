@@ -2,7 +2,16 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -12,12 +21,13 @@ class Category(Base):
     """Category model for transaction categorization."""
 
     __tablename__ = "categories"
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_user_category_name"),)
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     # Category identification
-    name = Column(String(255), nullable=False, unique=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
     display_name = Column(String(255), nullable=False)
 
     # Hierarchy - FK relationship for true parent-child structure

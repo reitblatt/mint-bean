@@ -45,17 +45,19 @@ function CategoryNode({
         className={`flex items-center py-2 px-3 rounded-lg hover:bg-gray-50 cursor-pointer ${
           isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : ''
         }`}
-        style={{ paddingLeft: `${level * 1.5 + 0.75}rem` }}
         onClick={() => onSelect?.(node)}
       >
+        {/* Indentation spacer */}
+        {level > 0 && <div style={{ width: `${level * 1.5}rem` }} />}
+
         {/* Expand/Collapse Arrow */}
-        {hasChildren && (
+        {hasChildren ? (
           <button
             onClick={(e) => {
               e.stopPropagation()
               setIsExpanded(!isExpanded)
             }}
-            className="mr-2 text-gray-400 hover:text-gray-600"
+            className="mr-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
           >
             {isExpanded ? (
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -75,6 +77,8 @@ function CategoryNode({
               </svg>
             )}
           </button>
+        ) : (
+          <div className="w-4 h-4 mr-2 flex-shrink-0" />
         )}
 
         {/* Icon */}
