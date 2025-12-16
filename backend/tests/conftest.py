@@ -13,9 +13,11 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.main import app
 from app.models.account import Account
+from app.models.app_settings import AppSettings
 from app.models.category import Category
 from app.models.plaid_item import PlaidItem
 from app.models.transaction import Transaction
+from app.models.user import User
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -33,6 +35,18 @@ def db() -> Generator[Session, None, None]:
     """Create a fresh database for each test."""
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
+
+    # Create default app settings for tests
+    settings = AppSettings(
+        plaid_client_id="test_client_id",
+        plaid_secret="test_secret",
+        plaid_environment="sandbox",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+    session.add(settings)
+    session.commit()
+
     try:
         yield session
     finally:
@@ -57,14 +71,42 @@ def client(db: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def sample_account(db: Session) -> Account:
+def test_user(db: Session) -> User:
+    """Create a test user."""
+    from app.core.auth import get_password_hash
+
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword"),
+        is_active=True,
+        is_admin=False,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_headers(test_user: User) -> dict:
+    """Create authentication headers for test user."""
+    from app.core.auth import create_access_token
+
+    token = create_access_token(data={"sub": str(test_user.id)})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def sample_account(db: Session, test_user: User) -> Account:
     """Create a sample account for testing."""
     account = Account(
+        user_id=test_user.id,
         account_id="test_acc_1",
         name="Test Checking",
         type="depository",
         beancount_account="Assets:Checking:Test",
         currency="USD",
+        environment="sandbox",
         is_active=True,
     )
     db.add(account)
@@ -74,9 +116,10 @@ def sample_account(db: Session) -> Account:
 
 
 @pytest.fixture
-def sample_category(db: Session) -> Category:
+def sample_category(db: Session, test_user: User) -> Category:
     """Create a sample category for testing."""
     category = Category(
+        user_id=test_user.id,
         name="groceries",
         display_name="Groceries",
         beancount_account="Expenses:Food:Groceries",
@@ -90,10 +133,11 @@ def sample_category(db: Session) -> Category:
 
 @pytest.fixture
 def sample_transaction(
-    db: Session, sample_account: Account, sample_category: Category
+    db: Session, test_user: User, sample_account: Account, sample_category: Category
 ) -> Transaction:
     """Create a sample transaction for testing."""
     transaction = Transaction(
+        user_id=test_user.id,
         transaction_id="test_txn_1",
         account_id=sample_account.id,
         category_id=sample_category.id,
@@ -102,6 +146,7 @@ def sample_transaction(
         description="Test grocery purchase",
         payee="Whole Foods",
         currency="USD",
+        environment="sandbox",
         pending=False,
         reviewed=False,
         synced_to_beancount=False,
@@ -113,13 +158,15 @@ def sample_transaction(
 
 
 @pytest.fixture
-def sample_plaid_item(db: Session) -> PlaidItem:
+def sample_plaid_item(db: Session, test_user: User) -> PlaidItem:
     """Create a sample Plaid item for testing."""
     item = PlaidItem(
+        user_id=test_user.id,
         item_id="test_item_123",
         access_token="access-sandbox-test-token",
         institution_id="ins_test",
         institution_name="Test Bank",
+        environment="sandbox",
         is_active=True,
         needs_update=False,
     )
