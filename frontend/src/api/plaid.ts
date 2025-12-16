@@ -60,4 +60,9 @@ export const plaidApi = {
   deleteItem: async (itemId: number): Promise<void> => {
     await apiClient.delete(`/plaid/items/${itemId}`)
   },
+
+  getCategories: async (): Promise<Record<string, string[]>> => {
+    const { data } = await apiClient.get<Record<string, string[]>>('/plaid/categories')
+    return data
+  },
 }

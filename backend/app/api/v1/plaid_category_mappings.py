@@ -3,8 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.models.plaid_category_mapping import PlaidCategoryMapping
+from app.models.user import User
 from app.schemas.plaid_category_mapping import (
     PlaidCategoryMappingCreate,
     PlaidCategoryMappingResponse,
@@ -18,6 +20,7 @@ router = APIRouter()
 def list_mappings(
     plaid_primary_category: str | None = None,
     auto_apply_only: bool = False,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[PlaidCategoryMapping]:
     """
@@ -26,12 +29,13 @@ def list_mappings(
     Args:
         plaid_primary_category: Filter by Plaid primary category
         auto_apply_only: Only return mappings with auto_apply=True
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         List of Plaid category mappings
     """
-    query = db.query(PlaidCategoryMapping)
+    query = db.query(PlaidCategoryMapping).filter(PlaidCategoryMapping.user_id == current_user.id)
 
     if plaid_primary_category:
         query = query.filter(PlaidCategoryMapping.plaid_primary_category == plaid_primary_category)
@@ -48,6 +52,7 @@ def list_mappings(
 @router.get("/{mapping_id}", response_model=PlaidCategoryMappingResponse)
 def get_mapping(
     mapping_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PlaidCategoryMapping:
     """
@@ -55,12 +60,20 @@ def get_mapping(
 
     Args:
         mapping_id: Mapping ID
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Plaid category mapping details
     """
-    mapping = db.query(PlaidCategoryMapping).filter(PlaidCategoryMapping.id == mapping_id).first()
+    mapping = (
+        db.query(PlaidCategoryMapping)
+        .filter(
+            PlaidCategoryMapping.id == mapping_id,
+            PlaidCategoryMapping.user_id == current_user.id,
+        )
+        .first()
+    )
     if not mapping:
         raise HTTPException(status_code=404, detail="Mapping not found")
     return mapping
@@ -69,6 +82,7 @@ def get_mapping(
 @router.post("/", response_model=PlaidCategoryMappingResponse, status_code=201)
 def create_mapping(
     mapping: PlaidCategoryMappingCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PlaidCategoryMapping:
     """
@@ -76,15 +90,17 @@ def create_mapping(
 
     Args:
         mapping: Mapping data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Created mapping
     """
-    # Check if mapping already exists
+    # Check if mapping already exists for this user
     existing = (
         db.query(PlaidCategoryMapping)
         .filter(
+            PlaidCategoryMapping.user_id == current_user.id,
             PlaidCategoryMapping.plaid_primary_category == mapping.plaid_primary_category,
             PlaidCategoryMapping.plaid_detailed_category == mapping.plaid_detailed_category,
         )
@@ -97,7 +113,10 @@ def create_mapping(
             detail="Mapping already exists for this Plaid category combination",
         )
 
-    db_mapping = PlaidCategoryMapping(**mapping.model_dump())
+    db_mapping = PlaidCategoryMapping(
+        user_id=current_user.id,
+        **mapping.model_dump(),
+    )
     db.add(db_mapping)
     db.commit()
     db.refresh(db_mapping)
@@ -108,6 +127,7 @@ def create_mapping(
 def update_mapping(
     mapping_id: int,
     mapping: PlaidCategoryMappingUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PlaidCategoryMapping:
     """
@@ -116,13 +136,19 @@ def update_mapping(
     Args:
         mapping_id: Mapping ID
         mapping: Updated mapping data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Updated mapping
     """
     db_mapping = (
-        db.query(PlaidCategoryMapping).filter(PlaidCategoryMapping.id == mapping_id).first()
+        db.query(PlaidCategoryMapping)
+        .filter(
+            PlaidCategoryMapping.id == mapping_id,
+            PlaidCategoryMapping.user_id == current_user.id,
+        )
+        .first()
     )
     if not db_mapping:
         raise HTTPException(status_code=404, detail="Mapping not found")
@@ -139,6 +165,7 @@ def update_mapping(
 @router.delete("/{mapping_id}", status_code=204)
 def delete_mapping(
     mapping_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
     """
@@ -146,10 +173,16 @@ def delete_mapping(
 
     Args:
         mapping_id: Mapping ID
+        current_user: Current authenticated user
         db: Database session
     """
     db_mapping = (
-        db.query(PlaidCategoryMapping).filter(PlaidCategoryMapping.id == mapping_id).first()
+        db.query(PlaidCategoryMapping)
+        .filter(
+            PlaidCategoryMapping.id == mapping_id,
+            PlaidCategoryMapping.user_id == current_user.id,
+        )
+        .first()
     )
     if not db_mapping:
         raise HTTPException(status_code=404, detail="Mapping not found")
@@ -162,6 +195,7 @@ def delete_mapping(
 def create_bulk_mappings(
     mappings: list[PlaidCategoryMappingCreate],
     skip_existing: bool = True,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[PlaidCategoryMapping]:
     """
@@ -170,6 +204,7 @@ def create_bulk_mappings(
     Args:
         mappings: List of mapping data
         skip_existing: Skip mappings that already exist instead of erroring
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
@@ -178,10 +213,11 @@ def create_bulk_mappings(
     created_mappings = []
 
     for mapping_data in mappings:
-        # Check if mapping already exists
+        # Check if mapping already exists for this user
         existing = (
             db.query(PlaidCategoryMapping)
             .filter(
+                PlaidCategoryMapping.user_id == current_user.id,
                 PlaidCategoryMapping.plaid_primary_category == mapping_data.plaid_primary_category,
                 PlaidCategoryMapping.plaid_detailed_category
                 == mapping_data.plaid_detailed_category,
@@ -198,7 +234,10 @@ def create_bulk_mappings(
                     detail=f"Mapping already exists for {mapping_data.plaid_primary_category}:{mapping_data.plaid_detailed_category}",
                 )
 
-        db_mapping = PlaidCategoryMapping(**mapping_data.model_dump())
+        db_mapping = PlaidCategoryMapping(
+            user_id=current_user.id,
+            **mapping_data.model_dump(),
+        )
         db.add(db_mapping)
         created_mappings.append(db_mapping)
 

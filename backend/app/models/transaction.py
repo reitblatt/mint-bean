@@ -55,6 +55,9 @@ class Transaction(Base):
     auto_categorized = Column(Boolean, default=False)  # Track if auto-categorized
     categorization_method = Column(String(50), nullable=True)  # "plaid_mapping", "rule", "manual"
 
+    # Plaid environment (sandbox or production)
+    environment = Column(String(20), nullable=False, default="sandbox", index=True)
+
     # Metadata
     pending = Column(Boolean, default=False)
     reviewed = Column(Boolean, default=False)

@@ -8,7 +8,6 @@ const navigation = [
   { name: 'Accounts', path: '/accounts' },
   { name: 'Categories', path: '/categories' },
   { name: 'Rules', path: '/rules' },
-  { name: 'Settings', path: '/settings' },
 ]
 
 export default function Layout() {
@@ -48,6 +47,21 @@ export default function Layout() {
                 </Link>
               )
             })}
+
+            {/* Admin-only links */}
+            {user?.is_admin && (
+              <Link
+                to="/admin"
+                className={clsx(
+                  'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+                  location.pathname === '/admin'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-700 hover:bg-gray-50'
+                )}
+              >
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* User section */}

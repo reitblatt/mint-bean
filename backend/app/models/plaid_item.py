@@ -22,6 +22,9 @@ class PlaidItem(Base):
     institution_id = Column(String, nullable=True)
     institution_name = Column(String, nullable=True)
 
+    # Plaid environment (sandbox or production)
+    environment = Column(String(20), nullable=False, default="sandbox", index=True)
+
     # Sync cursor for transactions
     cursor = Column(String, nullable=True)
 

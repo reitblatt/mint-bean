@@ -7,7 +7,7 @@ import Transactions from '@/pages/Transactions'
 import Accounts from '@/pages/Accounts'
 import Categories from '@/pages/Categories'
 import Rules from '@/pages/Rules'
-import Settings from '@/pages/Settings'
+import Admin from '@/pages/Admin'
 import { useAuth } from '@/contexts/AuthContext'
 
 function App() {
@@ -40,7 +40,7 @@ function App() {
         <Route path="accounts" element={<Accounts />} />
         <Route path="categories" element={<Categories />} />
         <Route path="rules" element={<Rules />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>
   )

@@ -27,7 +27,17 @@
       "Bash(then echo \"=== .env exists ===\")",
       "Bash(else echo \".env file not found\")",
       "Bash(fi)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pip freeze:*)",
+      "Bash(venv/bin/python:*)",
+      "Bash(lsof:*)",
+      "Bash(python scripts/seed_default_categories.py:*)",
+      "Bash(python -c:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImV4cCI6MTc2NTgzMjUwMn0.Hg-s8N0aZ-T1YPqSmH4UJbWGbEMp2Y94SmJmUaHnRWQ\")",
+      "Bash(python -m json.tool:*)",
+      "Bash(python migrate_add_environment.py:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nImplement environment-specific Plaid data isolation\n\nThis commit implements a system where Plaid credentials and environment\nsettings are shared globally across all users, and data is isolated by\nenvironment (sandbox vs production).\n\nBackend Changes:\n- Add AppSettings model to store global Plaid configuration in database\n- Add environment field to PlaidItem, Account, and Transaction models\n- Create settings_service.py for managing global settings\n- Create create_plaid_service() factory function for dynamic credentials\n- Update PlaidService methods to set environment on all records\n- Update all Plaid API endpoints to use database settings\n- Update accounts/transactions endpoints to filter by environment\n- Update Settings API to manage global Plaid settings via database\n- Create migration script to add environment fields to existing tables\n\nHow it works:\n- When environment is switched (sandbox ↔ production), all users see\n  only data for that environment\n- Adding accounts in sandbox, then switching to production shows 0\n  accounts until production accounts are added\n- Switching back to sandbox restores original sandbox accounts\n- Plaid credentials are now stored in database and shared across users\n\nMigration:\n- All existing records default to ''sandbox'' environment\n- New app_settings table created with default sandbox environment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nImplement environment-specific Plaid data isolation\n\nThis commit implements a system where Plaid credentials and environment\nsettings are shared globally across all users, and data is isolated by\nenvironment (sandbox vs production).\n\nBackend Changes:\n- Add AppSettings model to store global Plaid configuration in database\n- Add environment field to PlaidItem, Account, and Transaction models\n- Create settings_service.py for managing global settings\n- Create create_plaid_service() factory function for dynamic credentials\n- Update PlaidService methods to set environment on all records\n- Update all Plaid API endpoints to use database settings\n- Update accounts/transactions endpoints to filter by environment\n- Update Settings API to manage global Plaid settings via database\n- Create migration script to add environment fields to existing tables\n\nHow it works:\n- When environment is switched (sandbox ↔ production), all users see\n  only data for that environment\n- Adding accounts in sandbox, then switching to production shows 0\n  accounts until production accounts are added\n- Switching back to sandbox restores original sandbox accounts\n- Plaid credentials are now stored in database and shared across users\n\nMigration:\n- All existing records default to ''sandbox'' environment\n- New app_settings table created with default sandbox environment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\" --no-verify)"
     ]
   }
 }

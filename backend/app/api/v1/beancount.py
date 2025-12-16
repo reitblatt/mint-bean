@@ -6,7 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.models.user import User
 from app.services.beancount_service import BeancountService
 
 router = APIRouter()
@@ -14,9 +16,10 @@ router = APIRouter()
 
 @router.get("/export")
 def export_beancount_file(
-    db: Session = Depends(get_db),
     reviewed_only: bool = True,
     exclude_pending: bool = True,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
     Export transactions to Beancount format for download.
@@ -24,6 +27,8 @@ def export_beancount_file(
     Args:
         reviewed_only: Only export reviewed transactions (default: True)
         exclude_pending: Exclude pending transactions (default: True)
+        current_user: Current authenticated user
+        db: Database session
 
     Returns:
         Beancount file content as plain text
@@ -32,7 +37,10 @@ def export_beancount_file(
 
     try:
         content = service.generate_beancount_content(
-            db, reviewed_only=reviewed_only, exclude_pending=exclude_pending
+            db,
+            user_id=current_user.id,
+            reviewed_only=reviewed_only,
+            exclude_pending=exclude_pending,
         )
 
         # Generate filename with current date
@@ -50,14 +58,26 @@ def export_beancount_file(
 
 @router.get("/export-count")
 def get_export_count(
-    db: Session = Depends(get_db),
     reviewed_only: bool = True,
     exclude_pending: bool = True,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Get count of transactions that would be exported."""
+    """
+    Get count of transactions that would be exported.
+
+    Args:
+        reviewed_only: Only count reviewed transactions (default: True)
+        exclude_pending: Exclude pending transactions (default: True)
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Count of transactions matching the criteria
+    """
     from app.models.transaction import Transaction
 
-    query = db.query(Transaction)
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
 
     if reviewed_only:
         query = query.filter(Transaction.reviewed.is_(True))

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { plaidMappingsApi } from '@/api/plaidMappings'
 import { categoriesApi } from '@/api/categories'
+import { plaidApi } from '@/api/plaid'
 import type { PlaidCategoryMapping, Category } from '@/api/types'
 
 interface PlaidMappingModalProps {
@@ -25,6 +26,12 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoriesApi.list({ includeInactive: false }),
+  })
+
+  // Fetch Plaid categories
+  const { data: plaidCategories } = useQuery({
+    queryKey: ['plaid-categories'],
+    queryFn: () => plaidApi.getCategories(),
   })
 
   // Initialize form when editing
@@ -111,17 +118,28 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Plaid Primary Category *
             </label>
-            <input
-              type="text"
+            <select
               className="input"
               value={plaidPrimaryCategory}
-              onChange={(e) => setPlaidPrimaryCategory(e.target.value)}
-              placeholder="e.g., FOOD_AND_DRINK"
+              onChange={(e) => {
+                setPlaidPrimaryCategory(e.target.value)
+                setPlaidDetailedCategory('') // Reset detailed when primary changes
+              }}
               required
               disabled={isEdit}
-            />
+            >
+              <option value="">Select a primary category</option>
+              {plaidCategories &&
+                Object.keys(plaidCategories)
+                  .sort()
+                  .map((primary) => (
+                    <option key={primary} value={primary}>
+                      {primary.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+            </select>
             <p className="text-xs text-gray-500 mt-1">
-              The primary category from Plaid (e.g., FOOD_AND_DRINK, TRANSFER, etc.)
+              The primary category from Plaid
             </p>
           </div>
 
@@ -130,14 +148,21 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Plaid Detailed Category (Optional)
             </label>
-            <input
-              type="text"
+            <select
               className="input"
               value={plaidDetailedCategory}
               onChange={(e) => setPlaidDetailedCategory(e.target.value)}
-              placeholder="e.g., FOOD_AND_DRINK_RESTAURANTS"
-              disabled={isEdit}
-            />
+              disabled={isEdit || !plaidPrimaryCategory}
+            >
+              <option value="">None (match all)</option>
+              {plaidPrimaryCategory &&
+                plaidCategories &&
+                plaidCategories[plaidPrimaryCategory]?.map((detailed) => (
+                  <option key={detailed} value={detailed}>
+                    {detailed.replace(/_/g, ' ')}
+                  </option>
+                ))}
+            </select>
             <p className="text-xs text-gray-500 mt-1">
               Optional detailed category for more specific matching
             </p>

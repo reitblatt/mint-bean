@@ -19,21 +19,21 @@ export const plaidMappingsApi = {
     }
 
     const queryString = params.toString()
-    const url = `/api/v1/plaid-category-mappings${queryString ? `?${queryString}` : ''}`
+    const url = `/plaid-category-mappings${queryString ? `?${queryString}` : ''}`
     const response = await apiClient.get<PlaidCategoryMapping[]>(url)
     return response.data
   },
 
   get: async (id: number): Promise<PlaidCategoryMapping> => {
     const response = await apiClient.get<PlaidCategoryMapping>(
-      `/api/v1/plaid-category-mappings/${id}`
+      `/plaid-category-mappings/${id}`
     )
     return response.data
   },
 
   create: async (mapping: PlaidCategoryMappingCreate): Promise<PlaidCategoryMapping> => {
     const response = await apiClient.post<PlaidCategoryMapping>(
-      '/api/v1/plaid-category-mappings',
+      '/plaid-category-mappings',
       mapping
     )
     return response.data
@@ -41,14 +41,14 @@ export const plaidMappingsApi = {
 
   update: async (id: number, updates: PlaidCategoryMappingUpdate): Promise<PlaidCategoryMapping> => {
     const response = await apiClient.patch<PlaidCategoryMapping>(
-      `/api/v1/plaid-category-mappings/${id}`,
+      `/plaid-category-mappings/${id}`,
       updates
     )
     return response.data
   },
 
   delete: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/v1/plaid-category-mappings/${id}`)
+    await apiClient.delete(`/plaid-category-mappings/${id}`)
   },
 
   bulkCreate: async (
@@ -56,7 +56,7 @@ export const plaidMappingsApi = {
     skipExisting = true
   ): Promise<PlaidCategoryMapping[]> => {
     const response = await apiClient.post<PlaidCategoryMapping[]>(
-      `/api/v1/plaid-category-mappings/bulk?skip_existing=${skipExisting}`,
+      `/plaid-category-mappings/bulk?skip_existing=${skipExisting}`,
       mappings
     )
     return response.data

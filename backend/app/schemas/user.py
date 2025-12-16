@@ -33,6 +33,7 @@ class UserResponse(UserBase):
     id: int
     is_admin: bool
     is_active: bool
+    archived_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -57,3 +58,15 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str
+
+
+class UserDeleteRequest(BaseModel):
+    """Schema for user deletion request."""
+
+    hard_delete: bool = False  # If True, permanently delete; if False, archive
+
+
+class UserRestoreRequest(BaseModel):
+    """Schema for restoring archived user."""
+
+    restore_data: bool = True  # If True, restore all user data; if False, start fresh

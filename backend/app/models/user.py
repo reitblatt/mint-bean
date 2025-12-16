@@ -18,6 +18,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    archived_at = Column(DateTime, nullable=True)  # When user was archived (soft delete)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
     updated_at = Column(
         DateTime,

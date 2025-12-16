@@ -129,10 +129,14 @@ class PlaidService:
             # Create or update PlaidItem
             plaid_item = db.query(PlaidItem).filter(PlaidItem.item_id == item_id).first()
 
+            # Get the environment from the service instance
+            environment = getattr(self, "environment", "sandbox")
+
             if plaid_item:
                 plaid_item.access_token = access_token
                 plaid_item.institution_id = institution_id
                 plaid_item.institution_name = institution_name
+                plaid_item.environment = environment
                 plaid_item.is_active = True
                 plaid_item.needs_update = False
                 plaid_item.error_code = None
@@ -143,6 +147,7 @@ class PlaidService:
                     access_token=access_token,
                     institution_id=institution_id,
                     institution_name=institution_name,
+                    environment=environment,
                     is_active=True,
                 )
                 db.add(plaid_item)
@@ -176,6 +181,9 @@ class PlaidService:
                 access_token=plaid_item.access_token
             )
             response = self.client.accounts_get(request)
+
+            # Get the environment from plaid_item
+            environment = plaid_item.environment
 
             accounts = []
             for plaid_account in response.accounts:
@@ -211,6 +219,7 @@ class PlaidService:
                         subtype=subtype_str,
                         institution_name=plaid_item.institution_name,
                         institution_id=plaid_item.institution_id,
+                        environment=environment,
                         beancount_account=beancount_account,
                         currency=plaid_account.balances.iso_currency_code or "USD",
                         current_balance=plaid_account.balances.current,
@@ -235,6 +244,7 @@ class PlaidService:
                     account.subtype = subtype_str
                     account.institution_name = plaid_item.institution_name
                     account.institution_id = plaid_item.institution_id
+                    account.environment = environment
                     account.current_balance = plaid_account.balances.current
                     account.available_balance = plaid_account.balances.available
                     account.is_active = True
@@ -276,6 +286,9 @@ class PlaidService:
             # Make sure accounts are synced first
             accounts = self.get_accounts(plaid_item, db)
             account_map = {acc.plaid_account_id: acc for acc in accounts}
+
+            # Get the environment from plaid_item
+            environment = plaid_item.environment
 
             # Sync transactions
             has_more = True
@@ -347,6 +360,7 @@ class PlaidService:
                             payee=plaid_txn.merchant_name or plaid_txn.name,
                             amount=-plaid_txn.amount,  # Plaid uses positive for debits
                             currency=plaid_txn.iso_currency_code or "USD",
+                            environment=environment,
                             pending=plaid_txn.pending,
                             reviewed=False,
                             synced_to_beancount=False,
@@ -426,6 +440,7 @@ class PlaidService:
                         existing.description = plaid_txn.name
                         existing.payee = plaid_txn.merchant_name or plaid_txn.name
                         existing.amount = -plaid_txn.amount
+                        existing.environment = environment
                         existing.pending = plaid_txn.pending
                         existing.updated_at = datetime.now(UTC)
                         # Update Plaid category fields
@@ -572,5 +587,53 @@ class PlaidService:
         return {"method": None, "category_id": None, "confidence": None}
 
 
-# Singleton instance
+# Singleton instance - kept for backward compatibility but deprecated
+# Use create_plaid_service() instead
 plaid_service = PlaidService()
+
+
+def create_plaid_service(
+    client_id: str | None = None, secret: str | None = None, environment: str = "sandbox"
+) -> PlaidService:
+    """
+    Create a PlaidService instance with specific credentials.
+
+    Args:
+        client_id: Plaid client ID
+        secret: Plaid secret
+        environment: Plaid environment (sandbox or production)
+
+    Returns:
+        PlaidService instance
+    """
+    # Create a new instance with custom credentials
+    service = object.__new__(PlaidService)
+
+    # Map environment string to Plaid environment
+    env_map = {
+        "sandbox": plaid.Environment.Sandbox,
+        "development": plaid.Environment.Development,
+        "production": plaid.Environment.Production,
+    }
+
+    # Store the environment for later use
+    service.environment = environment
+
+    if not client_id or not secret:
+        logger.warning("Plaid credentials not configured. Plaid integration disabled.")
+        service.client = None
+        return service
+
+    configuration = plaid.Configuration(
+        host=env_map.get(environment, plaid.Environment.Sandbox),
+        api_key={
+            "clientId": client_id,
+            "secret": secret,
+        },
+    )
+
+    api_client = plaid.ApiClient(configuration)
+    service.client = plaid_api.PlaidApi(api_client)
+    logger.info(f"Plaid client initialized for environment: {environment}")
+
+    return service

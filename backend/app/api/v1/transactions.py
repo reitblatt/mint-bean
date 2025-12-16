@@ -3,14 +3,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.models.transaction import Transaction
+from app.models.user import User
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionListResponse,
     TransactionResponse,
     TransactionUpdate,
 )
+from app.services.settings_service import get_or_create_settings
 
 router = APIRouter()
 
@@ -24,10 +27,11 @@ def list_transactions(
     start_date: str | None = None,
     end_date: str | None = None,
     search: str | None = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> TransactionListResponse:
     """
-    List transactions with pagination and filters.
+    List transactions with pagination and filters for the current environment.
 
     Args:
         page: Page number
@@ -37,12 +41,19 @@ def list_transactions(
         start_date: Filter by start date (ISO format)
         end_date: Filter by end date (ISO format)
         search: Search in description and payee
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Paginated list of transactions
     """
-    query = db.query(Transaction)
+    # Get current environment from settings
+    settings = get_or_create_settings(db)
+
+    query = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.environment == settings.plaid_environment,
+    )
 
     # Apply filters
     if account_id:
@@ -81,19 +92,32 @@ def list_transactions(
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(
     transaction_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Transaction:
     """
-    Get a specific transaction by ID.
+    Get a specific transaction by ID for the current environment.
 
     Args:
         transaction_id: Transaction ID
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Transaction details
     """
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    # Get current environment from settings
+    settings = get_or_create_settings(db)
+
+    transaction = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id,
+            Transaction.environment == settings.plaid_environment,
+        )
+        .first()
+    )
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return transaction
@@ -102,6 +126,7 @@ def get_transaction(
 @router.post("/", response_model=TransactionResponse, status_code=201)
 def create_transaction(
     transaction: TransactionCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Transaction:
     """
@@ -109,15 +134,20 @@ def create_transaction(
 
     Args:
         transaction: Transaction data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Created transaction
     """
-    # Validate account exists
+    # Validate account exists and belongs to user
     from app.models.account import Account
 
-    account = db.query(Account).filter(Account.id == transaction.account_id).first()
+    account = (
+        db.query(Account)
+        .filter(Account.id == transaction.account_id, Account.user_id == current_user.id)
+        .first()
+    )
     if not account:
         raise HTTPException(status_code=400, detail="Account not found")
 
@@ -126,7 +156,11 @@ def create_transaction(
 
     transaction_id = f"txn_{uuid.uuid4().hex[:12]}"
 
-    db_transaction = Transaction(transaction_id=transaction_id, **transaction.model_dump())
+    db_transaction = Transaction(
+        transaction_id=transaction_id,
+        user_id=current_user.id,
+        **transaction.model_dump(),
+    )
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
@@ -137,20 +171,33 @@ def create_transaction(
 def update_transaction(
     transaction_id: int,
     transaction: TransactionUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Transaction:
     """
-    Update a transaction.
+    Update a transaction in the current environment.
 
     Args:
         transaction_id: Transaction ID
         transaction: Updated transaction data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Updated transaction
     """
-    db_transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    # Get current environment from settings
+    settings = get_or_create_settings(db)
+
+    db_transaction = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id,
+            Transaction.environment == settings.plaid_environment,
+        )
+        .first()
+    )
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
@@ -166,16 +213,29 @@ def update_transaction(
 @router.delete("/{transaction_id}", status_code=204)
 def delete_transaction(
     transaction_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
     """
-    Delete a transaction.
+    Delete a transaction in the current environment.
 
     Args:
         transaction_id: Transaction ID
+        current_user: Current authenticated user
         db: Database session
     """
-    db_transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    # Get current environment from settings
+    settings = get_or_create_settings(db)
+
+    db_transaction = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id,
+            Transaction.environment == settings.plaid_environment,
+        )
+        .first()
+    )
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 

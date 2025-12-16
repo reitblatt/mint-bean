@@ -5,9 +5,11 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.models.category import Category
 from app.models.transaction import Transaction
+from app.models.user import User
 from app.schemas.category import (
     CategoryCreate,
     CategoryMergeRequest,
@@ -22,6 +24,7 @@ router = APIRouter()
 @router.get("/", response_model=list[CategoryResponse])
 def list_categories(
     category_type: str = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[Category]:
     """
@@ -29,12 +32,13 @@ def list_categories(
 
     Args:
         category_type: Filter by category type (expense, income, transfer)
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         List of categories
     """
-    query = db.query(Category)
+    query = db.query(Category).filter(Category.user_id == current_user.id)
     if category_type:
         query = query.filter(Category.category_type == category_type)
     return query.order_by(Category.name).all()
@@ -44,6 +48,7 @@ def list_categories(
 def get_category_tree(
     category_type: str | None = None,
     include_inactive: bool = False,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[CategoryTreeNode]:
     """
@@ -52,13 +57,14 @@ def get_category_tree(
     Args:
         category_type: Filter by category type (expense, income, transfer)
         include_inactive: Include inactive categories
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         List of root category nodes with nested children
     """
     # Query all categories
-    query = db.query(Category)
+    query = db.query(Category).filter(Category.user_id == current_user.id)
     if category_type:
         query = query.filter(Category.category_type == category_type)
     if not include_inactive:
@@ -99,6 +105,7 @@ def get_category_tree(
 @router.get("/{category_id}", response_model=CategoryResponse)
 def get_category(
     category_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Category:
     """
@@ -106,12 +113,17 @@ def get_category(
 
     Args:
         category_id: Category ID
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Category details
     """
-    category = db.query(Category).filter(Category.id == category_id).first()
+    category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.user_id == current_user.id)
+        .first()
+    )
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category
@@ -120,6 +132,7 @@ def get_category(
 @router.post("/", response_model=CategoryResponse, status_code=201)
 def create_category(
     category: CategoryCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Category:
     """
@@ -127,12 +140,16 @@ def create_category(
 
     Args:
         category: Category data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Created category
     """
-    db_category = Category(**category.model_dump())
+    db_category = Category(
+        user_id=current_user.id,
+        **category.model_dump(),
+    )
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
@@ -143,6 +160,7 @@ def create_category(
 def update_category(
     category_id: int,
     category: CategoryUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Category:
     """
@@ -151,12 +169,17 @@ def update_category(
     Args:
         category_id: Category ID
         category: Updated category data
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Updated category
     """
-    db_category = db.query(Category).filter(Category.id == category_id).first()
+    db_category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.user_id == current_user.id)
+        .first()
+    )
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
 
@@ -172,6 +195,7 @@ def update_category(
 @router.delete("/{category_id}", status_code=204)
 def delete_category(
     category_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
     """
@@ -179,9 +203,14 @@ def delete_category(
 
     Args:
         category_id: Category ID
+        current_user: Current authenticated user
         db: Database session
     """
-    db_category = db.query(Category).filter(Category.id == category_id).first()
+    db_category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.user_id == current_user.id)
+        .first()
+    )
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
 
@@ -197,6 +226,7 @@ def delete_category(
 @router.post("/merge", response_model=CategoryResponse)
 def merge_categories(
     merge_request: CategoryMergeRequest,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Category:
     """
@@ -207,21 +237,32 @@ def merge_categories(
 
     Args:
         merge_request: Merge request with source and target category IDs
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Updated target category
     """
-    # Validate target category exists
+    # Validate target category exists and belongs to user
     target_category = (
-        db.query(Category).filter(Category.id == merge_request.target_category_id).first()
+        db.query(Category)
+        .filter(
+            Category.id == merge_request.target_category_id,
+            Category.user_id == current_user.id,
+        )
+        .first()
     )
     if not target_category:
         raise HTTPException(status_code=404, detail="Target category not found")
 
-    # Validate source categories exist
+    # Validate source categories exist and belong to user
     source_categories = (
-        db.query(Category).filter(Category.id.in_(merge_request.source_category_ids)).all()
+        db.query(Category)
+        .filter(
+            Category.id.in_(merge_request.source_category_ids),
+            Category.user_id == current_user.id,
+        )
+        .all()
     )
     if len(source_categories) != len(merge_request.source_category_ids):
         raise HTTPException(status_code=404, detail="One or more source categories not found")
@@ -262,6 +303,7 @@ def merge_categories(
 @router.post("/{category_id}/refresh-stats", response_model=CategoryResponse)
 def refresh_category_statistics(
     category_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Category:
     """
@@ -271,12 +313,17 @@ def refresh_category_statistics(
 
     Args:
         category_id: Category ID
+        current_user: Current authenticated user
         db: Database session
 
     Returns:
         Updated category with refreshed statistics
     """
-    category = db.query(Category).filter(Category.id == category_id).first()
+    category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.user_id == current_user.id)
+        .first()
+    )
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 

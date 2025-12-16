@@ -31,6 +31,9 @@ class Account(Base):
     institution_name = Column(String(255), nullable=True)
     institution_id = Column(String(255), nullable=True)
 
+    # Plaid environment (sandbox or production)
+    environment = Column(String(20), nullable=False, default="sandbox", index=True)
+
     # Beancount mapping
     beancount_account = Column(String(255), nullable=False, unique=True)
 

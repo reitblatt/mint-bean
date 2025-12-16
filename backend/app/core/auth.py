@@ -65,7 +65,12 @@ def decode_token(token: str) -> dict[str, Any]:
         HTTPException: If token is invalid or expired
     """
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+            options={"verify_sub": False},  # Allow integer user IDs in sub claim
+        )
         return payload
     except JWTError as e:
         raise HTTPException(

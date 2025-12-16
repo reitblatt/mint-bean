@@ -1,12 +1,21 @@
 """Admin API endpoints for user management."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_admin_user, get_password_hash
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, UserUpdate
+from app.schemas.user import (
+    UserCreate,
+    UserDeleteRequest,
+    UserResponse,
+    UserRestoreRequest,
+    UserUpdate,
+)
+from app.services.category_service import seed_default_categories
 
 router = APIRouter()
 
@@ -52,14 +61,26 @@ def create_user(
         Created user
 
     Raises:
-        HTTPException: If email already exists
+        HTTPException: If email already exists (active user) or archived user needs restoration
     """
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
+        # If user is archived, prompt for restoration
+        if existing_user.archived_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "message": "User with this email was previously archived",
+                    "user_id": existing_user.id,
+                    "archived_at": existing_user.archived_at.isoformat(),
+                    "action_required": "Use POST /api/v1/admin/users/{user_id}/restore to restore this user",
+                },
+            )
+        # If user is active, reject
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
+            detail="Email already registered with an active user",
         )
 
     # Create new user
@@ -74,6 +95,9 @@ def create_user(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    # Seed default categories for the new user
+    seed_default_categories(db, db_user.id)
 
     return db_user
 
@@ -166,14 +190,16 @@ def update_user(
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,
+    delete_options: UserDeleteRequest = Body(default=UserDeleteRequest()),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
-    Delete a user (admin only).
+    Delete or archive a user (admin only).
 
     Args:
         user_id: User ID
+        delete_options: Deletion options (hard_delete: True for permanent, False for archive)
         current_user: Current authenticated admin user
         db: Database session
 
@@ -193,10 +219,84 @@ def delete_user(
             detail="User not found",
         )
 
-    db.delete(user)
-    db.commit()
+    if delete_options.hard_delete:
+        # Hard delete - permanently remove user and all data
+        db.delete(user)
+    else:
+        # Soft delete - archive user (keeps all data)
+        user.archived_at = datetime.now(UTC)
+        user.is_active = False
 
+    db.commit()
     return None
+
+
+@router.post("/users/{user_id}/restore", response_model=UserResponse)
+def restore_user(
+    user_id: int,
+    restore_options: UserRestoreRequest = Body(default=UserRestoreRequest()),
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Restore an archived user (admin only).
+
+    Args:
+        user_id: User ID
+        restore_options: Restoration options (restore_data: True to keep data, False to reset)
+        current_user: Current authenticated admin user
+        db: Database session
+
+    Returns:
+        Restored user
+
+    Raises:
+        HTTPException: If user not found or not archived
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if user.archived_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not archived",
+        )
+
+    # Restore user
+    user.archived_at = None
+    user.is_active = True
+
+    if not restore_options.restore_data:
+        # Delete all user data and start fresh
+        # The cascade deletes will handle related data
+        for account in user.accounts:
+            db.delete(account)
+        for transaction in user.transactions:
+            db.delete(transaction)
+        for category in user.categories:
+            db.delete(category)
+        for rule in user.rules:
+            db.delete(rule)
+        for plaid_item in user.plaid_items:
+            db.delete(plaid_item)
+        for mapping in user.plaid_category_mappings:
+            db.delete(mapping)
+
+        db.commit()
+        db.refresh(user)
+
+        # Seed default categories for fresh start
+        seed_default_categories(db, user.id)
+    else:
+        # Just restore the user, keeping all data
+        db.commit()
+        db.refresh(user)
+
+    return user
 
 
 @router.post("/users/{user_id}/reset-password", response_model=UserResponse)
