@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.account import Account
 from app.models.plaid_item import PlaidItem
 from app.models.transaction import Transaction
+from app.models.user import User
 from app.services.plaid_service import PlaidService
 
 
@@ -64,7 +65,7 @@ class TestExchangePublicToken:
     """Test exchange_public_token method."""
 
     @patch("app.services.plaid_service.plaid_api.PlaidApi")
-    def test_exchange_token_creates_new_item(self, mock_plaid_api, db: Session):
+    def test_exchange_token_creates_new_item(self, mock_plaid_api, db: Session, test_user: User):
         """Test exchanging token creates new PlaidItem."""
         # Mock exchange response
         mock_exchange_response = Mock()
@@ -86,17 +87,20 @@ class TestExchangePublicToken:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
-        plaid_item = service.exchange_public_token("public-token-test", db)
+        plaid_item = service.exchange_public_token("public-token-test", db, user_id=test_user.id)
 
         assert plaid_item.item_id == "item-123"
         assert plaid_item.access_token == "access-sandbox-token"
         assert plaid_item.institution_name == "Test Bank"
         assert plaid_item.is_active is True
+        assert plaid_item.user_id == test_user.id
+        assert plaid_item.environment == "sandbox"
 
     @patch("app.services.plaid_service.plaid_api.PlaidApi")
     def test_exchange_token_updates_existing_item(
-        self, mock_plaid_api, db: Session, sample_plaid_item: PlaidItem
+        self, mock_plaid_api, db: Session, sample_plaid_item: PlaidItem, test_user: User
     ):
         """Test exchanging token updates existing PlaidItem."""
         # Mock exchange response
@@ -119,8 +123,9 @@ class TestExchangePublicToken:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
-        plaid_item = service.exchange_public_token("public-token-test", db)
+        plaid_item = service.exchange_public_token("public-token-test", db, user_id=test_user.id)
 
         assert plaid_item.id == sample_plaid_item.id
         assert plaid_item.access_token == "new-access-token"
@@ -143,6 +148,7 @@ class TestGetAccounts:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
         accounts = service.get_accounts(sample_plaid_item, db)
 
@@ -150,20 +156,29 @@ class TestGetAccounts:
         assert accounts[0].name == "Plaid Checking"
         assert accounts[0].plaid_account_id == "plaid_acc_123"
         assert accounts[0].is_active is True
+        assert accounts[0].user_id == sample_plaid_item.user_id
+        assert accounts[0].environment == "sandbox"
 
     @patch("app.services.plaid_service.plaid_api.PlaidApi")
     def test_get_accounts_updates_existing(
-        self, mock_plaid_api, db: Session, sample_plaid_item: PlaidItem, mock_plaid_account
+        self,
+        mock_plaid_api,
+        db: Session,
+        sample_plaid_item: PlaidItem,
+        mock_plaid_account,
+        test_user: User,
     ):
         """Test getting accounts updates existing records."""
         # Create existing account
         existing = Account(
+            user_id=test_user.id,
             account_id="existing_1",
             plaid_account_id="plaid_acc_123",
             name="Old Name",
             type="depository",
             beancount_account="Assets:Checking:Old",
             currency="USD",
+            environment="sandbox",
             is_active=False,
         )
         db.add(existing)
@@ -177,6 +192,7 @@ class TestGetAccounts:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
         accounts = service.get_accounts(sample_plaid_item, db)
 
@@ -197,16 +213,19 @@ class TestSyncTransactions:
         sample_plaid_item: PlaidItem,
         mock_plaid_account,
         mock_plaid_transaction,
+        test_user: User,
     ):
         """Test sync adds new transactions."""
         # Create account first
         account = Account(
+            user_id=test_user.id,
             account_id="test_acc",
             plaid_account_id="plaid_acc_123",
             name="Test Account",
             type="depository",
             beancount_account="Assets:Checking:Test",
             currency="USD",
+            environment="sandbox",
             is_active=True,
         )
         db.add(account)
@@ -230,6 +249,7 @@ class TestSyncTransactions:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
         added, modified, removed, cursor = service.sync_transactions(sample_plaid_item, db)
 
@@ -247,6 +267,8 @@ class TestSyncTransactions:
         assert txn is not None
         assert txn.amount == -25.50  # Plaid uses positive for debits
         assert txn.pending is False
+        assert txn.user_id == test_user.id
+        assert txn.environment == "sandbox"
 
     @patch("app.services.plaid_service.plaid_api.PlaidApi")
     def test_sync_updates_pending_to_completed(
@@ -256,16 +278,19 @@ class TestSyncTransactions:
         sample_plaid_item: PlaidItem,
         mock_plaid_account,
         mock_plaid_transaction_pending,
+        test_user: User,
     ):
         """Test sync correctly handles pending → completed transition."""
         # Create account
         account = Account(
+            user_id=test_user.id,
             account_id="test_acc",
             plaid_account_id="plaid_acc_123",
             name="Test Account",
             type="depository",
             beancount_account="Assets:Checking:Test",
             currency="USD",
+            environment="sandbox",
             is_active=True,
         )
         db.add(account)
@@ -274,6 +299,7 @@ class TestSyncTransactions:
 
         # Create existing pending transaction
         pending_txn = Transaction(
+            user_id=test_user.id,
             transaction_id="plaid_plaid_txn_pending_456",
             plaid_transaction_id="plaid_txn_pending_456",
             account_id=account.id,
@@ -282,6 +308,7 @@ class TestSyncTransactions:
             description="McDonald's",
             payee="McDonald's",
             currency="USD",
+            environment="sandbox",
             pending=True,
             reviewed=False,
             synced_to_beancount=False,
@@ -318,6 +345,7 @@ class TestSyncTransactions:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
         added, modified, removed, cursor = service.sync_transactions(sample_plaid_item, db)
 
@@ -370,6 +398,7 @@ class TestSyncTransactions:
 
         service = PlaidService()
         service.client = mock_client
+        service.environment = "sandbox"
 
         added, modified, removed, cursor = service.sync_transactions(sample_plaid_item, db)
 

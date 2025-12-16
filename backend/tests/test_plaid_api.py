@@ -1,37 +1,50 @@
 """Tests for Plaid API endpoints."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.plaid_item import PlaidItem
+from app.models.user import User
 
 
 class TestCreateLinkToken:
     """Test POST /api/v1/plaid/link/token/create endpoint."""
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_create_link_token_success(self, mock_service, client: TestClient):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_create_link_token_success(
+        self, mock_create_service, client: TestClient, auth_headers: dict
+    ):
         """Test successful link token creation."""
+        mock_service = Mock()
         mock_service.create_link_token.return_value = {
             "link_token": "link-sandbox-test-token",
             "expiration": "2024-12-31T23:59:59",
         }
+        mock_create_service.return_value = mock_service
 
-        response = client.post("/api/v1/plaid/link/token/create", json={"user_id": "user-123"})
+        response = client.post(
+            "/api/v1/plaid/link/token/create", json={"user_id": "user-123"}, headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
         assert data["link_token"] == "link-sandbox-test-token"
         assert "expiration" in data
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_create_link_token_no_credentials(self, mock_service, client: TestClient):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_create_link_token_no_credentials(
+        self, mock_create_service, client: TestClient, auth_headers: dict
+    ):
         """Test link token creation with no Plaid credentials."""
+        mock_service = Mock()
         mock_service.create_link_token.side_effect = ValueError("not initialized")
+        mock_create_service.return_value = mock_service
 
-        response = client.post("/api/v1/plaid/link/token/create", json={"user_id": "user-123"})
+        response = client.post(
+            "/api/v1/plaid/link/token/create", json={"user_id": "user-123"}, headers=auth_headers
+        )
 
         assert response.status_code == 503
 
@@ -39,16 +52,23 @@ class TestCreateLinkToken:
 class TestExchangePublicToken:
     """Test POST /api/v1/plaid/item/public_token/exchange endpoint."""
 
-    @patch("app.api.v1.plaid.plaid_service")
+    @patch("app.api.v1.plaid.create_plaid_service")
     def test_exchange_token_success(
-        self, mock_service, client: TestClient, sample_plaid_item: PlaidItem
+        self,
+        mock_create_service,
+        client: TestClient,
+        auth_headers: dict,
+        sample_plaid_item: PlaidItem,
     ):
         """Test successful token exchange."""
+        mock_service = Mock()
         mock_service.exchange_public_token.return_value = sample_plaid_item
+        mock_create_service.return_value = mock_service
 
         response = client.post(
             "/api/v1/plaid/item/public_token/exchange",
             json={"public_token": "public-sandbox-token"},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -56,13 +76,19 @@ class TestExchangePublicToken:
         assert data["item_id"] == sample_plaid_item.item_id
         assert data["institution_name"] == sample_plaid_item.institution_name
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_exchange_token_error(self, mock_service, client: TestClient):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_exchange_token_error(
+        self, mock_create_service, client: TestClient, auth_headers: dict
+    ):
         """Test token exchange with error."""
+        mock_service = Mock()
         mock_service.exchange_public_token.side_effect = Exception("Plaid API error")
+        mock_create_service.return_value = mock_service
 
         response = client.post(
-            "/api/v1/plaid/item/public_token/exchange", json={"public_token": "invalid-token"}
+            "/api/v1/plaid/item/public_token/exchange",
+            json={"public_token": "invalid-token"},
+            headers=auth_headers,
         )
 
         assert response.status_code == 500
@@ -71,16 +97,18 @@ class TestExchangePublicToken:
 class TestListPlaidItems:
     """Test GET /api/v1/plaid/items endpoint."""
 
-    def test_list_items_empty(self, client: TestClient):
+    def test_list_items_empty(self, client: TestClient, auth_headers: dict):
         """Test listing items when none exist."""
-        response = client.get("/api/v1/plaid/items")
+        response = client.get("/api/v1/plaid/items", headers=auth_headers)
 
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_list_items_with_data(self, client: TestClient, sample_plaid_item: PlaidItem):
+    def test_list_items_with_data(
+        self, client: TestClient, auth_headers: dict, sample_plaid_item: PlaidItem
+    ):
         """Test listing items with data."""
-        response = client.get("/api/v1/plaid/items")
+        response = client.get("/api/v1/plaid/items", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -93,18 +121,20 @@ class TestListPlaidItems:
 class TestGetPlaidItem:
     """Test GET /api/v1/plaid/items/{item_id} endpoint."""
 
-    def test_get_item_success(self, client: TestClient, sample_plaid_item: PlaidItem):
+    def test_get_item_success(
+        self, client: TestClient, auth_headers: dict, sample_plaid_item: PlaidItem
+    ):
         """Test getting specific item."""
-        response = client.get(f"/api/v1/plaid/items/{sample_plaid_item.id}")
+        response = client.get(f"/api/v1/plaid/items/{sample_plaid_item.id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == sample_plaid_item.id
         assert data["item_id"] == sample_plaid_item.item_id
 
-    def test_get_item_not_found(self, client: TestClient):
+    def test_get_item_not_found(self, client: TestClient, auth_headers: dict):
         """Test getting non-existent item."""
-        response = client.get("/api/v1/plaid/items/999")
+        response = client.get("/api/v1/plaid/items/999", headers=auth_headers)
 
         assert response.status_code == 404
 
@@ -112,12 +142,22 @@ class TestGetPlaidItem:
 class TestSyncTransactions:
     """Test POST /api/v1/plaid/items/{item_id}/sync endpoint."""
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_sync_success(self, mock_service, client: TestClient, sample_plaid_item: PlaidItem):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_sync_success(
+        self,
+        mock_create_service,
+        client: TestClient,
+        auth_headers: dict,
+        sample_plaid_item: PlaidItem,
+    ):
         """Test successful transaction sync."""
+        mock_service = Mock()
         mock_service.sync_transactions.return_value = (5, 2, 1, "cursor_123")
+        mock_create_service.return_value = mock_service
 
-        response = client.post(f"/api/v1/plaid/items/{sample_plaid_item.id}/sync")
+        response = client.post(
+            f"/api/v1/plaid/items/{sample_plaid_item.id}/sync", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -126,29 +166,41 @@ class TestSyncTransactions:
         assert data["removed"] == 1
         assert data["cursor"] == "cursor_123"
 
-    def test_sync_item_not_found(self, client: TestClient):
+    def test_sync_item_not_found(self, client: TestClient, auth_headers: dict):
         """Test sync with non-existent item."""
-        response = client.post("/api/v1/plaid/items/999/sync")
+        response = client.post("/api/v1/plaid/items/999/sync", headers=auth_headers)
 
         assert response.status_code == 404
 
     def test_sync_inactive_item(
-        self, client: TestClient, sample_plaid_item: PlaidItem, db: Session
+        self, client: TestClient, auth_headers: dict, sample_plaid_item: PlaidItem, db: Session
     ):
         """Test sync with inactive item."""
         sample_plaid_item.is_active = False
         db.commit()
 
-        response = client.post(f"/api/v1/plaid/items/{sample_plaid_item.id}/sync")
+        response = client.post(
+            f"/api/v1/plaid/items/{sample_plaid_item.id}/sync", headers=auth_headers
+        )
 
         assert response.status_code == 400
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_sync_error(self, mock_service, client: TestClient, sample_plaid_item: PlaidItem):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_sync_error(
+        self,
+        mock_create_service,
+        client: TestClient,
+        auth_headers: dict,
+        sample_plaid_item: PlaidItem,
+    ):
         """Test sync with Plaid API error."""
+        mock_service = Mock()
         mock_service.sync_transactions.side_effect = Exception("Plaid API error")
+        mock_create_service.return_value = mock_service
 
-        response = client.post(f"/api/v1/plaid/items/{sample_plaid_item.id}/sync")
+        response = client.post(
+            f"/api/v1/plaid/items/{sample_plaid_item.id}/sync", headers=auth_headers
+        )
 
         assert response.status_code == 500
 
@@ -157,10 +209,12 @@ class TestDeletePlaidItem:
     """Test DELETE /api/v1/plaid/items/{item_id} endpoint."""
 
     def test_delete_item_success(
-        self, client: TestClient, sample_plaid_item: PlaidItem, db: Session
+        self, client: TestClient, auth_headers: dict, sample_plaid_item: PlaidItem, db: Session
     ):
         """Test successful item deletion (deactivation)."""
-        response = client.delete(f"/api/v1/plaid/items/{sample_plaid_item.id}")
+        response = client.delete(
+            f"/api/v1/plaid/items/{sample_plaid_item.id}", headers=auth_headers
+        )
 
         assert response.status_code == 204
 
@@ -168,9 +222,9 @@ class TestDeletePlaidItem:
         db.refresh(sample_plaid_item)
         assert sample_plaid_item.is_active is False
 
-    def test_delete_item_not_found(self, client: TestClient):
+    def test_delete_item_not_found(self, client: TestClient, auth_headers: dict):
         """Test deleting non-existent item."""
-        response = client.delete("/api/v1/plaid/items/999")
+        response = client.delete("/api/v1/plaid/items/999", headers=auth_headers)
 
         assert response.status_code == 404
 
@@ -178,27 +232,41 @@ class TestDeletePlaidItem:
 class TestEndToEndPlaidFlow:
     """E2E tests for complete Plaid integration flow."""
 
-    @patch("app.api.v1.plaid.plaid_service")
-    def test_complete_plaid_flow(self, mock_service, client: TestClient, db: Session):
+    @patch("app.api.v1.plaid.create_plaid_service")
+    def test_complete_plaid_flow(
+        self,
+        mock_create_service,
+        client: TestClient,
+        auth_headers: dict,
+        db: Session,
+        test_user: User,
+    ):
         """Test complete flow: link token → exchange → sync."""
+        mock_service = Mock()
+
         # Step 1: Create link token
         mock_service.create_link_token.return_value = {
             "link_token": "link-sandbox-test",
             "expiration": "2024-12-31T23:59:59",
         }
+        mock_create_service.return_value = mock_service
 
         link_response = client.post(
-            "/api/v1/plaid/link/token/create", json={"user_id": "test-user"}
+            "/api/v1/plaid/link/token/create",
+            json={"user_id": "test-user"},
+            headers=auth_headers,
         )
         assert link_response.status_code == 200
         assert "link_token" in link_response.json()
 
         # Step 2: Exchange public token
         plaid_item = PlaidItem(
+            user_id=test_user.id,
             item_id="item_test_123",
             access_token="access-test-token",
             institution_id="ins_test",
             institution_name="Test Bank",
+            environment="sandbox",
             is_active=True,
         )
         db.add(plaid_item)
@@ -208,14 +276,16 @@ class TestEndToEndPlaidFlow:
         mock_service.exchange_public_token.return_value = plaid_item
 
         exchange_response = client.post(
-            "/api/v1/plaid/item/public_token/exchange", json={"public_token": "public-test-token"}
+            "/api/v1/plaid/item/public_token/exchange",
+            json={"public_token": "public-test-token"},
+            headers=auth_headers,
         )
         assert exchange_response.status_code == 200
         item_data = exchange_response.json()
         assert item_data["item_id"] == "item_test_123"
 
         # Step 3: Verify item appears in list
-        list_response = client.get("/api/v1/plaid/items")
+        list_response = client.get("/api/v1/plaid/items", headers=auth_headers)
         assert list_response.status_code == 200
         items = list_response.json()
         assert len(items) == 1
@@ -224,14 +294,18 @@ class TestEndToEndPlaidFlow:
         # Step 4: Sync transactions
         mock_service.sync_transactions.return_value = (10, 2, 0, "cursor_abc")
 
-        sync_response = client.post(f"/api/v1/plaid/items/{plaid_item.id}/sync")
+        sync_response = client.post(
+            f"/api/v1/plaid/items/{plaid_item.id}/sync", headers=auth_headers
+        )
         assert sync_response.status_code == 200
         sync_data = sync_response.json()
         assert sync_data["added"] == 10
         assert sync_data["modified"] == 2
 
         # Step 5: Disconnect (deactivate)
-        delete_response = client.delete(f"/api/v1/plaid/items/{plaid_item.id}")
+        delete_response = client.delete(
+            f"/api/v1/plaid/items/{plaid_item.id}", headers=auth_headers
+        )
         assert delete_response.status_code == 204
 
         # Verify item is deactivated

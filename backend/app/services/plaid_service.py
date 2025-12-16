@@ -85,13 +85,14 @@ class PlaidService:
             logger.error(f"Error creating link token: {e}")
             raise
 
-    def exchange_public_token(self, public_token: str, db: Session) -> PlaidItem:
+    def exchange_public_token(self, public_token: str, db: Session, user_id: int) -> PlaidItem:
         """
         Exchange public token for access token and create PlaidItem.
 
         Args:
             public_token: Public token from Plaid Link
             db: Database session
+            user_id: User ID to associate with the PlaidItem
 
         Returns:
             Created PlaidItem
@@ -137,12 +138,14 @@ class PlaidService:
                 plaid_item.institution_id = institution_id
                 plaid_item.institution_name = institution_name
                 plaid_item.environment = environment
+                plaid_item.user_id = user_id
                 plaid_item.is_active = True
                 plaid_item.needs_update = False
                 plaid_item.error_code = None
                 plaid_item.updated_at = datetime.now(UTC)
             else:
                 plaid_item = PlaidItem(
+                    user_id=user_id,
                     item_id=item_id,
                     access_token=access_token,
                     institution_id=institution_id,
@@ -211,6 +214,7 @@ class PlaidService:
                         )
 
                     account = Account(
+                        user_id=plaid_item.user_id,
                         name=plaid_account.name,
                         official_name=plaid_account.official_name,
                         account_id=f"plaid_{plaid_account.account_id}",
@@ -352,6 +356,7 @@ class PlaidService:
                                 pass
 
                         transaction = Transaction(
+                            user_id=plaid_item.user_id,
                             transaction_id=f"plaid_{plaid_txn.transaction_id}",
                             plaid_transaction_id=plaid_txn.transaction_id,
                             account_id=account.id,
