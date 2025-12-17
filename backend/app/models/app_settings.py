@@ -14,9 +14,10 @@ class AppSettings(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # Plaid settings
+    # Plaid settings - single client_id, separate secrets per environment
     plaid_client_id = Column(String(255), nullable=True)
-    plaid_secret = Column(String(255), nullable=True)
+    plaid_sandbox_secret = Column(String(255), nullable=True)
+    plaid_production_secret = Column(String(255), nullable=True)
     plaid_environment = Column(
         String(20), nullable=False, default="sandbox"
     )  # sandbox or production
@@ -33,3 +34,18 @@ class AppSettings(Base):
     def __repr__(self) -> str:
         """String representation of settings."""
         return f"<AppSettings env={self.plaid_environment}>"
+
+    def get_credentials_for_environment(self, environment: str) -> tuple[str | None, str | None]:
+        """
+        Get the client_id and secret for the specified environment.
+
+        Args:
+            environment: 'sandbox' or 'production'
+
+        Returns:
+            Tuple of (client_id, secret) for the environment
+        """
+        if environment == "production":
+            return (self.plaid_client_id, self.plaid_production_secret)
+        else:  # Default to sandbox
+            return (self.plaid_client_id, self.plaid_sandbox_secret)

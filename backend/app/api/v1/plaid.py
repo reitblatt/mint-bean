@@ -199,10 +199,13 @@ def create_link_token(
         # Get settings from database
         settings = get_or_create_settings(db)
 
-        # Create service with database credentials
+        # Get credentials for current environment
+        client_id, secret = settings.get_credentials_for_environment(settings.plaid_environment)
+
+        # Create service with environment-specific credentials
         service = create_plaid_service(
-            client_id=settings.plaid_client_id,
-            secret=settings.plaid_secret,
+            client_id=client_id,
+            secret=secret,
             environment=settings.plaid_environment,
         )
 
@@ -235,10 +238,13 @@ def exchange_public_token(
         # Get settings from database
         settings = get_or_create_settings(db)
 
-        # Create service with database credentials
+        # Get credentials for current environment
+        client_id, secret = settings.get_credentials_for_environment(settings.plaid_environment)
+
+        # Create service with environment-specific credentials
         service = create_plaid_service(
-            client_id=settings.plaid_client_id,
-            secret=settings.plaid_secret,
+            client_id=client_id,
+            secret=secret,
             environment=settings.plaid_environment,
         )
 
@@ -359,10 +365,13 @@ def sync_transactions(
         raise HTTPException(status_code=400, detail="Plaid item is not active")
 
     try:
-        # Create service with database credentials
+        # Get credentials for current environment
+        client_id, secret = settings.get_credentials_for_environment(settings.plaid_environment)
+
+        # Create service with environment-specific credentials
         service = create_plaid_service(
-            client_id=settings.plaid_client_id,
-            secret=settings.plaid_secret,
+            client_id=client_id,
+            secret=secret,
             environment=settings.plaid_environment,
         )
 

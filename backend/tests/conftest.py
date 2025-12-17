@@ -39,7 +39,8 @@ def db() -> Generator[Session, None, None]:
     # Create default app settings for tests
     settings = AppSettings(
         plaid_client_id="test_client_id",
-        plaid_secret="test_secret",
+        plaid_sandbox_secret="test_sandbox_secret",
+        plaid_production_secret="test_production_secret",
         plaid_environment="sandbox",
         created_at=datetime.now(),
         updated_at=datetime.now(),

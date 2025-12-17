@@ -4,13 +4,15 @@ import { useAuth } from '@/contexts/AuthContext'
 
 interface PlaidSettings {
   client_id: string
-  secret: string
-  environment: 'sandbox' | 'development' | 'production'
+  sandbox_secret: string
+  production_secret: string
+  environment: 'sandbox' | 'production'
 }
 
 interface PlaidSettingsResponse {
   client_id: string
-  secret_masked: string
+  sandbox_secret_masked: string | null
+  production_secret_masked: string | null
   environment: string
 }
 
@@ -31,7 +33,8 @@ export default function Admin() {
   // Plaid settings state
   const [plaidSettings, setPlaidSettings] = useState<PlaidSettings>({
     client_id: '',
-    secret: '',
+    sandbox_secret: '',
+    production_secret: '',
     environment: 'sandbox',
   })
   const [currentPlaidSettings, setCurrentPlaidSettings] = useState<PlaidSettingsResponse | null>(null)
@@ -72,8 +75,9 @@ export default function Admin() {
       setCurrentPlaidSettings(response.data)
       setPlaidSettings({
         client_id: response.data.client_id,
-        secret: '', // Don't pre-fill secret for security
-        environment: response.data.environment as 'sandbox' | 'development' | 'production',
+        sandbox_secret: '', // Don't pre-fill secrets for security
+        production_secret: '', // Don't pre-fill secrets for security
+        environment: response.data.environment as 'sandbox' | 'production',
       })
     } catch (error) {
       console.error('Failed to load Plaid settings:', error)
@@ -104,8 +108,12 @@ export default function Admin() {
       const response = await apiClient.put<PlaidSettingsResponse>('/settings/plaid', plaidSettings)
       setCurrentPlaidSettings(response.data)
       setPlaidSuccess('Plaid settings updated successfully!')
-      // Clear the secret field
-      setPlaidSettings({ ...plaidSettings, secret: '' })
+      // Clear the secret fields
+      setPlaidSettings({
+        ...plaidSettings,
+        sandbox_secret: '',
+        production_secret: ''
+      })
     } catch (error: any) {
       setPlaidError(error.response?.data?.detail || 'Failed to update settings')
     } finally {
@@ -221,7 +229,8 @@ export default function Admin() {
             </div>
           )}
 
-          <form onSubmit={handlePlaidSubmit} className="space-y-4">
+          <form onSubmit={handlePlaidSubmit} className="space-y-6">
+            {/* Client ID (shared across environments) */}
             <div>
               <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-1">
                 Client ID
@@ -232,28 +241,55 @@ export default function Admin() {
                 value={plaidSettings.client_id}
                 onChange={(e) => setPlaidSettings({ ...plaidSettings, client_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                placeholder="Enter Plaid client ID"
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Same client ID is used for all environments
+              </p>
             </div>
 
-            <div>
-              <label htmlFor="secret" className="block text-sm font-medium text-gray-700 mb-1">
-                Secret
-              </label>
-              <input
-                type="password"
-                id="secret"
-                value={plaidSettings.secret}
-                onChange={(e) => setPlaidSettings({ ...plaidSettings, secret: e.target.value })}
-                placeholder={currentPlaidSettings ? currentPlaidSettings.secret_masked : 'Enter secret'}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="mt-1 text-sm text-gray-500">Leave blank to keep current secret</p>
+            {/* Sandbox Secret */}
+            <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
+              <h3 className="text-md font-semibold text-gray-900 mb-3">Sandbox Secret</h3>
+              <div>
+                <label htmlFor="sandbox_secret" className="block text-sm font-medium text-gray-700 mb-1">
+                  Secret
+                </label>
+                <input
+                  type="password"
+                  id="sandbox_secret"
+                  value={plaidSettings.sandbox_secret}
+                  onChange={(e) => setPlaidSettings({ ...plaidSettings, sandbox_secret: e.target.value })}
+                  placeholder={currentPlaidSettings?.sandbox_secret_masked || 'Enter sandbox secret'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-sm text-gray-500">Leave blank to keep current secret</p>
+              </div>
             </div>
 
+            {/* Production Secret */}
+            <div className="border border-red-200 rounded-md p-4 bg-red-50">
+              <h3 className="text-md font-semibold text-gray-900 mb-3">Production Secret</h3>
+              <div>
+                <label htmlFor="production_secret" className="block text-sm font-medium text-gray-700 mb-1">
+                  Secret
+                </label>
+                <input
+                  type="password"
+                  id="production_secret"
+                  value={plaidSettings.production_secret}
+                  onChange={(e) => setPlaidSettings({ ...plaidSettings, production_secret: e.target.value })}
+                  placeholder={currentPlaidSettings?.production_secret_masked || 'Enter production secret'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-sm text-gray-500">Leave blank to keep current secret</p>
+              </div>
+            </div>
+
+            {/* Current Environment */}
             <div>
               <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-1">
-                Environment
+                Active Environment
               </label>
               <select
                 id="environment"
@@ -261,15 +297,17 @@ export default function Admin() {
                 onChange={(e) =>
                   setPlaidSettings({
                     ...plaidSettings,
-                    environment: e.target.value as 'sandbox' | 'development' | 'production',
+                    environment: e.target.value as 'sandbox' | 'production',
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="sandbox">Sandbox</option>
-                <option value="development">Development</option>
                 <option value="production">Production</option>
               </select>
+              <p className="mt-1 text-sm text-gray-500">
+                This determines which credentials are used and which data is displayed
+              </p>
             </div>
 
             <button

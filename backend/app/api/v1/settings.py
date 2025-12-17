@@ -13,18 +13,20 @@ router = APIRouter()
 
 
 class PlaidSettings(BaseModel):
-    """Plaid API settings."""
+    """Plaid API settings with environment-specific secrets."""
 
     client_id: str | None = None
-    secret: str | None = None
+    sandbox_secret: str | None = None
+    production_secret: str | None = None
     environment: str | None = None
 
 
 class PlaidSettingsResponse(BaseModel):
-    """Plaid settings response (secret is masked)."""
+    """Plaid settings response (secrets are masked)."""
 
     client_id: str | None
-    secret_masked: str | None
+    sandbox_secret_masked: str | None
+    production_secret_masked: str | None
     environment: str
 
 
@@ -41,21 +43,22 @@ def get_plaid_settings(
         db: Database session
 
     Returns:
-        Plaid settings with masked secret
+        Plaid settings with masked secrets
     """
     settings = get_or_create_settings(db)
 
-    # Mask the secret for display
-    secret_masked = None
-    if settings.plaid_secret:
-        if len(settings.plaid_secret) > 8:
-            secret_masked = f"{settings.plaid_secret[:4]}...{settings.plaid_secret[-4:]}"
-        else:
-            secret_masked = "****"
+    def mask_secret(secret: str | None) -> str | None:
+        """Mask a secret for display."""
+        if not secret:
+            return None
+        if len(secret) > 8:
+            return f"{secret[:4]}...{secret[-4:]}"
+        return "****"
 
     return PlaidSettingsResponse(
         client_id=settings.plaid_client_id,
-        secret_masked=secret_masked,
+        sandbox_secret_masked=mask_secret(settings.plaid_sandbox_secret),
+        production_secret_masked=mask_secret(settings.plaid_production_secret),
         environment=settings.plaid_environment,
     )
 
@@ -70,12 +73,12 @@ def update_plaid_settings_endpoint(
     Update Plaid API settings in database (admin only).
 
     Args:
-        settings: New Plaid settings
+        settings: New Plaid settings with environment-specific credentials
         current_user: Current authenticated admin user
         db: Database session
 
     Returns:
-        Updated settings with masked secret
+        Updated settings with masked secrets
     """
     # Validate environment if provided
     if settings.environment:
@@ -91,23 +94,23 @@ def update_plaid_settings_endpoint(
         updated_settings = update_plaid_settings(
             db=db,
             client_id=settings.client_id,
-            secret=settings.secret,
+            sandbox_secret=settings.sandbox_secret,
+            production_secret=settings.production_secret,
             environment=settings.environment,
         )
 
-        # Mask the secret for display
-        secret_masked = None
-        if updated_settings.plaid_secret:
-            if len(updated_settings.plaid_secret) > 8:
-                secret_masked = (
-                    f"{updated_settings.plaid_secret[:4]}...{updated_settings.plaid_secret[-4:]}"
-                )
-            else:
-                secret_masked = "****"
+        def mask_secret(secret: str | None) -> str | None:
+            """Mask a secret for display."""
+            if not secret:
+                return None
+            if len(secret) > 8:
+                return f"{secret[:4]}...{secret[-4:]}"
+            return "****"
 
         return PlaidSettingsResponse(
             client_id=updated_settings.plaid_client_id,
-            secret_masked=secret_masked,
+            sandbox_secret_masked=mask_secret(updated_settings.plaid_sandbox_secret),
+            production_secret_masked=mask_secret(updated_settings.plaid_production_secret),
             environment=updated_settings.plaid_environment,
         )
     except ValueError as e:
