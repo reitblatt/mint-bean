@@ -44,8 +44,9 @@ export function DisconnectAccountModal({
         `/plaid/items/${plaidItemId}/disconnect-impact`
       )
       setImpact(response.data)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to analyze disconnect impact')
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
+      setError(error.response?.data?.detail || 'Failed to analyze disconnect impact')
     } finally {
       setLoading(false)
     }
