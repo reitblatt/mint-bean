@@ -10,7 +10,7 @@ from app.models.account import Account
 from app.models.plaid_item import PlaidItem
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.services.plaid_service import PlaidService
+from app.services.plaid_service import PlaidService, create_plaid_service
 
 
 class TestPlaidServiceInit:
@@ -18,16 +18,15 @@ class TestPlaidServiceInit:
 
     def test_init_with_credentials(self):
         """Test service initializes with credentials."""
-        service = PlaidService()
+        service = create_plaid_service(
+            client_id="test_client_id", secret="test_secret", environment="sandbox"
+        )
         assert service.client is not None
 
     def test_init_without_credentials(self):
         """Test service handles missing credentials."""
-        with patch("app.services.plaid_service.settings") as mock_settings:
-            mock_settings.PLAID_CLIENT_ID = None
-            mock_settings.PLAID_SECRET = None
-            service = PlaidService()
-            assert service.client is None
+        service = create_plaid_service(client_id=None, secret=None, environment="sandbox")
+        assert service.client is None
 
 
 class TestCreateLinkToken:
