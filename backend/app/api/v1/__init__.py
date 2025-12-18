@@ -8,6 +8,7 @@ from app.api.v1 import (
     auth,
     beancount,
     categories,
+    deletion,
     plaid,
     plaid_category_mappings,
     rules,
@@ -38,3 +39,5 @@ api_router.include_router(
 )
 
 api_router.include_router(beancount.router, prefix="/beancount", tags=["beancount"])
+
+api_router.include_router(deletion.router, prefix="/deletion", tags=["deletion"])
