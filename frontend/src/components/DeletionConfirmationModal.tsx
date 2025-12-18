@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api/api'
+import { apiClient } from '../api/client'
 
 interface DeletionImpact {
   entity_type: string
@@ -40,7 +40,7 @@ export function DeletionConfirmationModal({
     setLoading(true)
     setError(null)
     try {
-      const response = await api.get<DeletionImpact>(
+      const response = await apiClient.get<DeletionImpact>(
         `/deletion/impact/${entityType}/${entityId}`
       )
       setImpact(response.data)

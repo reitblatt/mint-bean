@@ -36,3 +36,12 @@ repos:
       - id: prettier
         files: ^frontend/
         types_or: [javascript, jsx, ts, tsx, json, css]
+
+  - repo: local
+    hooks:
+      - id: frontend-typecheck
+        name: Frontend TypeScript Check
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        files: ^frontend/src/.*\.(ts|tsx)$
+        pass_filenames: false
