@@ -2,11 +2,16 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { plaidApi } from '@/api/plaid'
 import PlaidLink from './PlaidLink'
+import { DisconnectAccountModal } from './DisconnectAccountModal'
 
 export default function PlaidAccountsManager() {
   const queryClient = useQueryClient()
   const [syncingItemId, setSyncingItemId] = useState<number | null>(null)
   const [showLinkButton, setShowLinkButton] = useState(false)
+  const [disconnectModal, setDisconnectModal] = useState<{
+    itemId: number
+    institutionName: string
+  } | null>(null)
 
   // Fetch connected Plaid items
   const { data: items, isLoading } = useQuery({
@@ -44,8 +49,16 @@ export default function PlaidAccountsManager() {
   }
 
   const handleDelete = (itemId: number, institutionName: string | null) => {
-    if (confirm(`Are you sure you want to disconnect ${institutionName || 'this account'}?`)) {
-      deleteMutation.mutate(itemId)
+    setDisconnectModal({
+      itemId,
+      institutionName: institutionName || 'this account',
+    })
+  }
+
+  const handleConfirmDisconnect = () => {
+    if (disconnectModal) {
+      deleteMutation.mutate(disconnectModal.itemId)
+      setDisconnectModal(null)
     }
   }
 
@@ -186,6 +199,17 @@ export default function PlaidAccountsManager() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Disconnect confirmation modal */}
+      {disconnectModal && (
+        <DisconnectAccountModal
+          isOpen={true}
+          plaidItemId={disconnectModal.itemId}
+          institutionName={disconnectModal.institutionName}
+          onConfirm={handleConfirmDisconnect}
+          onCancel={() => setDisconnectModal(null)}
+        />
       )}
     </div>
   )

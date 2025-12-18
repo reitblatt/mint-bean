@@ -388,6 +388,107 @@ def sync_transactions(
         raise HTTPException(status_code=500, detail=f"Failed to sync transactions: {str(e)}") from e
 
 
+@router.get("/items/{item_id}/disconnect-impact")
+def get_disconnect_impact(
+    item_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the impact of disconnecting a Plaid item.
+
+    Returns counts of accounts, transactions, and rules that will be affected.
+
+    Args:
+        item_id: Plaid item ID
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Impact analysis including counts of affected entities
+    """
+    from sqlalchemy import func
+
+    from app.models.account import Account
+    from app.models.rule import Rule
+    from app.models.transaction import Transaction
+
+    # Get current environment from settings
+    settings = get_or_create_settings(db)
+
+    # Get the Plaid item
+    plaid_item = (
+        db.query(PlaidItem)
+        .filter(
+            PlaidItem.id == item_id,
+            PlaidItem.user_id == current_user.id,
+            PlaidItem.environment == settings.plaid_environment,
+        )
+        .first()
+    )
+
+    if not plaid_item:
+        raise HTTPException(status_code=404, detail="Plaid item not found")
+
+    # Count accounts linked to this Plaid item
+    accounts_count = (
+        db.query(func.count(Account.id))
+        .filter(
+            Account.plaid_item_id == plaid_item.item_id,
+            Account.user_id == current_user.id,
+            Account.environment == settings.plaid_environment,
+        )
+        .scalar()
+    )
+
+    # Count transactions for those accounts
+    transactions_count = (
+        db.query(func.count(Transaction.id))
+        .join(Account, Transaction.account_id == Account.id)
+        .filter(
+            Account.plaid_item_id == plaid_item.item_id,
+            Account.user_id == current_user.id,
+            Account.environment == settings.plaid_environment,
+        )
+        .scalar()
+    )
+
+    # Count rules that reference these accounts
+    # This is a bit tricky since rules store conditions as JSON
+    # We'll do a simple LIKE search for account references
+    account_ids = (
+        db.query(Account.id)
+        .filter(
+            Account.plaid_item_id == plaid_item.item_id,
+            Account.user_id == current_user.id,
+            Account.environment == settings.plaid_environment,
+        )
+        .all()
+    )
+
+    rules_affected_count = 0
+    if account_ids:
+        # Check each account ID in rule conditions
+        for (account_id,) in account_ids:
+            count = (
+                db.query(func.count(Rule.id))
+                .filter(
+                    Rule.user_id == current_user.id,
+                    Rule.conditions.like(f'%"account_id": {account_id}%'),
+                )
+                .scalar()
+            )
+            rules_affected_count += count
+
+    return {
+        "plaid_item_id": plaid_item.id,
+        "institution_name": plaid_item.institution_name or "Unknown Institution",
+        "accounts_count": accounts_count or 0,
+        "transactions_count": transactions_count or 0,
+        "rules_affected_count": rules_affected_count,
+    }
+
+
 @router.delete("/items/{item_id}", status_code=204)
 def delete_plaid_item(
     item_id: int,
