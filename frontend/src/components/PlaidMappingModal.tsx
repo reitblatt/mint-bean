@@ -63,7 +63,7 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: any }) =>
+    mutationFn: ({ id, updates }: { id: number; updates: { category_id: number; confidence: number; auto_apply: boolean } }) =>
       plaidMappingsApi.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plaid-mappings'] })

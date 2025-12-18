@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { apiClient } from '../api/client'
 
 interface DisconnectImpact {
@@ -28,13 +28,7 @@ export function DisconnectAccountModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen && plaidItemId) {
-      fetchDisconnectImpact()
-    }
-  }, [isOpen, plaidItemId])
-
-  const fetchDisconnectImpact = async () => {
+  const fetchDisconnectImpact = useCallback(async () => {
     if (!plaidItemId) return
 
     setLoading(true)
@@ -50,7 +44,13 @@ export function DisconnectAccountModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [plaidItemId])
+
+  useEffect(() => {
+    if (isOpen && plaidItemId) {
+      fetchDisconnectImpact()
+    }
+  }, [isOpen, plaidItemId, fetchDisconnectImpact])
 
   if (!isOpen) return null
 

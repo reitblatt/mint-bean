@@ -22,7 +22,7 @@ export default function PlaidAccountsManager() {
   // Sync transactions mutation
   const syncMutation = useMutation({
     mutationFn: (itemId: number) => plaidApi.syncTransactions(itemId),
-    onSuccess: (data, itemId) => {
+    onSuccess: (data) => {
       console.log(`Synced ${data.added} new transactions`)
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })

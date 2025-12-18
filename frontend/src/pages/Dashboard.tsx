@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { accountsApi } from '@/api/accounts'
 import { transactionsApi } from '@/api/transactions'
 import { beancountApi } from '@/api/beancount'
@@ -8,7 +8,6 @@ import TransactionDetailModal from '@/components/TransactionDetailModal'
 import type { Transaction } from '@/api/types'
 
 export default function Dashboard() {
-  const queryClient = useQueryClient()
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   // Fetch accounts
@@ -128,7 +127,8 @@ export default function Dashboard() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
     },
-    onError: (error: any) => {
+    onError: (err) => {
+      const error = err as { response?: { data?: { detail?: string } }; message?: string }
       alert(`Export failed: ${error.response?.data?.detail || error.message}`)
     },
   })

@@ -18,9 +18,10 @@ export default function Login() {
     try {
       await login(email, password)
       navigate('/')
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       const errorMessage =
-        err.response?.data?.detail || 'Login failed. Please check your credentials.'
+        error.response?.data?.detail || 'Login failed. Please check your credentials.'
       setError(errorMessage)
     } finally {
       setLoading(false)

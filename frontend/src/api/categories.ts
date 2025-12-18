@@ -2,9 +2,12 @@ import { apiClient } from './client'
 import type { Category, CategoryTreeNode, CategoryMergeRequest } from './types'
 
 export const categoriesApi = {
-  list: async (categoryType?: string): Promise<Category[]> => {
+  list: async (params?: { categoryType?: string; includeInactive?: boolean }): Promise<Category[]> => {
     const { data } = await apiClient.get<Category[]>('/categories', {
-      params: categoryType ? { category_type: categoryType } : undefined,
+      params: {
+        ...(params?.categoryType && { category_type: params.categoryType }),
+        ...(params?.includeInactive !== undefined && { include_inactive: params.includeInactive }),
+      },
     })
     return data
   },

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { rulesApi } from '@/api/rules'
 import { categoriesApi } from '@/api/categories'
-import type { Rule, Category } from '@/api/types'
+import type { Rule } from '@/api/types'
 
 interface RuleFormModalProps {
   isOpen: boolean
@@ -58,7 +58,7 @@ export default function RuleFormModal({ isOpen, onClose, rule }: RuleFormModalPr
 
       // Parse conditions (simplified - just handle single condition)
       if (rule.conditions && typeof rule.conditions === 'object') {
-        const cond = rule.conditions as SimpleCondition
+        const cond = rule.conditions as unknown as SimpleCondition
         if (cond.field) {
           setConditionField(cond.field)
           setConditionOperator(cond.operator)
@@ -105,7 +105,7 @@ export default function RuleFormModal({ isOpen, onClose, rule }: RuleFormModalPr
     }
 
     // Build actions object
-    const actions: Record<string, any> = {}
+    const actions: Record<string, unknown> = {}
     if (categoryId) {
       actions.set_category = categoryId
     }
@@ -113,7 +113,7 @@ export default function RuleFormModal({ isOpen, onClose, rule }: RuleFormModalPr
     const ruleData = {
       name,
       description,
-      conditions,
+      conditions: conditions as unknown as Record<string, unknown>,
       actions,
       priority,
       active,

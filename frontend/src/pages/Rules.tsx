@@ -114,27 +114,29 @@ export default function Rules() {
     return category?.display_name || `Category ${categoryId}`
   }
 
-  const getConditionSummary = (conditions: Record<string, any>): string => {
+  const getConditionSummary = (conditions: Record<string, unknown>): string => {
     if (!conditions) return 'No conditions'
 
     // Handle simple condition
-    if (conditions.field && conditions.operator && conditions.value !== undefined) {
-      const field = conditions.field.replace('_', ' ')
-      const operator = conditions.operator.replace('_', ' ')
-      return `${field} ${operator} "${conditions.value}"`
+    const cond = conditions as { field?: string; operator?: string; value?: string }
+    if (cond.field && cond.operator && cond.value !== undefined) {
+      const field = cond.field.replace('_', ' ')
+      const operator = cond.operator.replace('_', ' ')
+      return `${field} ${operator} "${cond.value}"`
     }
 
     // Handle complex conditions
-    if (conditions.all || conditions.any) {
-      const type = conditions.all ? 'all' : 'any'
-      const count = (conditions.all || conditions.any).length
+    const complexCond = conditions as { all?: unknown[]; any?: unknown[] }
+    if (complexCond.all || complexCond.any) {
+      const type = complexCond.all ? 'all' : 'any'
+      const count = (complexCond.all || complexCond.any)?.length || 0
       return `Match ${type} of ${count} conditions`
     }
 
     return 'Complex conditions'
   }
 
-  const getActionSummary = (actions: Record<string, any>, categoryId?: number): string => {
+  const getActionSummary = (actions: Record<string, unknown>, categoryId?: number): string => {
     if (!actions) return 'No actions'
 
     const actionList = []

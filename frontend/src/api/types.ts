@@ -3,6 +3,10 @@ export interface Transaction {
   transaction_id: string
   account_id: number
   category_id?: number
+  category?: {
+    id: number
+    display_name: string
+  }
   date: string
   amount: number
   description: string
@@ -91,8 +95,8 @@ export interface Rule {
   id: number
   name: string
   description?: string
-  conditions: Record<string, any>
-  actions: Record<string, any>
+  conditions: Record<string, unknown>
+  actions: Record<string, unknown>
   category_id?: number
   priority: number
   active: boolean
@@ -105,6 +109,7 @@ export interface Rule {
 export interface TransactionFilters {
   page?: number
   page_size?: number
+  limit?: number
   account_id?: number
   category_id?: number
   start_date?: string

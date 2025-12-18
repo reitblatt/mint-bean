@@ -113,7 +113,7 @@ export default function AccountsHierarchy({ accounts }: AccountsHierarchyProps) 
               <div className="divide-y divide-gray-200">
                 {institutionAccounts.map((account) => {
                   const typeInfo = getAccountTypeInfo(account.type, account.subtype)
-                  const lastSync = formatLastSync(account.last_synced_at)
+                  const lastSync = formatLastSync(account.last_synced_at ?? null)
 
                   return (
                     <div key={account.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
@@ -147,7 +147,7 @@ export default function AccountsHierarchy({ accounts }: AccountsHierarchyProps) 
                                   {new Intl.NumberFormat('en-US', {
                                     style: 'currency',
                                     currency: account.currency,
-                                  }).format(account.available_balance)}
+                                  }).format(account.available_balance ?? 0)}
                                 </div>
                                 <div className="text-xs text-gray-500">Available</div>
                               </div>
@@ -156,10 +156,10 @@ export default function AccountsHierarchy({ accounts }: AccountsHierarchyProps) 
                           {/* Current Balance */}
                           <div className="text-right">
                             <div className="text-xl font-bold text-gray-900">
-                              {account.current_balance !== null
+                              {account.current_balance != null
                                 ? new Intl.NumberFormat('en-US', {
                                     style: 'currency',
-                                    currency: account.currency,
+                                    currency: account.currency ?? 'USD',
                                   }).format(account.current_balance)
                                 : 'N/A'}
                             </div>

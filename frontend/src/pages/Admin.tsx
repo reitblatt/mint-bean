@@ -51,24 +51,6 @@ export default function Admin() {
   const [deleteModalUser, setDeleteModalUser] = useState<User | null>(null)
   const [restoreModalUser, setRestoreModalUser] = useState<User | null>(null)
 
-  // Check if user is admin
-  if (!user?.is_admin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You do not have permission to access this page.</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Load Plaid settings
-  useEffect(() => {
-    loadPlaidSettings()
-    loadUsers()
-  }, [])
-
   const loadPlaidSettings = async () => {
     try {
       const response = await apiClient.get<PlaidSettingsResponse>('/settings/plaid')
@@ -98,6 +80,24 @@ export default function Admin() {
     }
   }
 
+  // Load data on mount
+  useEffect(() => {
+    loadPlaidSettings()
+    loadUsers()
+  }, [])
+
+  // Check if user is admin
+  if (!user?.is_admin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600">You do not have permission to access this page.</p>
+        </div>
+      </div>
+    )
+  }
+
   const handlePlaidSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setPlaidLoading(true)
@@ -114,7 +114,8 @@ export default function Admin() {
         sandbox_secret: '',
         production_secret: ''
       })
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       setPlaidError(error.response?.data?.detail || 'Failed to update settings')
     } finally {
       setPlaidLoading(false)
@@ -130,7 +131,8 @@ export default function Admin() {
       setShowCreateUser(false)
       setNewUser({ email: '', password: '', is_admin: false })
       loadUsers()
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       setUsersError(error.response?.data?.detail || 'Failed to create user')
     }
   }
@@ -139,7 +141,8 @@ export default function Admin() {
     try {
       await apiClient.patch(`/admin/users/${userId}`, { is_active: !currentStatus })
       loadUsers()
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       setUsersError(error.response?.data?.detail || 'Failed to update user status')
     }
   }
@@ -151,7 +154,8 @@ export default function Admin() {
       })
       setDeleteModalUser(null)
       loadUsers()
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       setUsersError(error.response?.data?.detail || 'Failed to delete user')
     }
   }
@@ -163,7 +167,8 @@ export default function Admin() {
       })
       setRestoreModalUser(null)
       loadUsers()
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       setUsersError(error.response?.data?.detail || 'Failed to restore user')
     }
   }
@@ -175,7 +180,8 @@ export default function Admin() {
     try {
       await apiClient.post(`/admin/users/${userId}/reset-password`, { new_password: newPassword })
       alert('Password reset successfully!')
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
       alert(error.response?.data?.detail || 'Failed to reset password')
     }
   }

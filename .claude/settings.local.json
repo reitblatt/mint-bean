@@ -44,7 +44,10 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImV4cCI6MTc2NTk5NzQxMn0.W7rS-R9KNgUNUZK5VRoYMRqSFPSbpP3TF1D1FHNrdsw\" curl -X GET http://localhost:8000/api/v1/settings/plaid  -H \"Authorization: Bearer $TOKEN\"  -H \"Content-Type: application/json\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImV4cCI6MTc2NTk5NzQxMn0.W7rS-R9KNgUNUZK5VRoYMRqSFPSbpP3TF1D1FHNrdsw\")",
       "Bash(gh run list:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run type-check:*)"
     ]
   }
 }

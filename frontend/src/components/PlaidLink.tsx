@@ -55,10 +55,11 @@ export default function PlaidLink({ onSuccess, onExit }: PlaidLinkProps) {
   )
 
   const handleOnExit = useCallback(
-    (err: any) => {
+    (err: unknown) => {
       if (err) {
-        console.error('Plaid Link exit with error:', err)
-        setError(`Plaid Link error: ${err.error_message || 'Unknown error'}`)
+        const error = err as { error_message?: string }
+        console.error('Plaid Link exit with error:', error)
+        setError(`Plaid Link error: ${error.error_message || 'Unknown error'}`)
       }
       onExit?.()
     },

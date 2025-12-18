@@ -27,7 +27,7 @@ export default function TransactionFiltersPanel({
     queryFn: () => accountsApi.list(),
   })
 
-  const updateFilter = (key: keyof TransactionFilters, value: any) => {
+  const updateFilter = (key: keyof TransactionFilters, value: string | number | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value || undefined,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Transaction, Category, Account } from '@/api/types'
+import type { Transaction } from '@/api/types'
 import { categoriesApi } from '@/api/categories'
 import { accountsApi } from '@/api/accounts'
 import { transactionsApi } from '@/api/transactions'

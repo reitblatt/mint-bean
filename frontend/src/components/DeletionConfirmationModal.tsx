@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { apiClient } from '../api/client'
 
 interface DeletionImpact {
@@ -30,13 +30,7 @@ export function DeletionConfirmationModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen && entityId) {
-      fetchDeletionImpact()
-    }
-  }, [isOpen, entityType, entityId])
-
-  const fetchDeletionImpact = async () => {
+  const fetchDeletionImpact = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -44,12 +38,19 @@ export function DeletionConfirmationModal({
         `/deletion/impact/${entityType}/${entityId}`
       )
       setImpact(response.data)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to analyze deletion impact')
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } } }
+      setError(error.response?.data?.detail || 'Failed to analyze deletion impact')
     } finally {
       setLoading(false)
     }
-  }
+  }, [entityType, entityId])
+
+  useEffect(() => {
+    if (isOpen && entityId) {
+      fetchDeletionImpact()
+    }
+  }, [isOpen, entityId, fetchDeletionImpact])
 
   if (!isOpen) return null
 
