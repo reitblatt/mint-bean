@@ -105,7 +105,20 @@ export default function Admin() {
     setPlaidSuccess(null)
 
     try {
-      const response = await apiClient.put<PlaidSettingsResponse>('/settings/plaid', plaidSettings)
+      // Only send non-empty fields to avoid overwriting existing secrets with empty strings
+      const payload: Partial<PlaidSettings> = {
+        client_id: plaidSettings.client_id || undefined,
+        environment: plaidSettings.environment,
+      }
+      // Only include secrets if they're non-empty (user is actually updating them)
+      if (plaidSettings.sandbox_secret) {
+        payload.sandbox_secret = plaidSettings.sandbox_secret
+      }
+      if (plaidSettings.production_secret) {
+        payload.production_secret = plaidSettings.production_secret
+      }
+
+      const response = await apiClient.put<PlaidSettingsResponse>('/settings/plaid', payload)
       setCurrentPlaidSettings(response.data)
       setPlaidSuccess('Plaid settings updated successfully!')
       // Clear the secret fields
