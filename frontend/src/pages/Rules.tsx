@@ -451,9 +451,6 @@ export default function Rules() {
                       MintBean Category
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Confidence
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Auto Apply
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -481,19 +478,6 @@ export default function Rules() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {mapping.category?.display_name || `Category ${mapping.category_id}`}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full"
-                              style={{ width: `${mapping.confidence * 100}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {(mapping.confidence * 100).toFixed(0)}%
-                          </span>
-                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {mapping.auto_apply ? (

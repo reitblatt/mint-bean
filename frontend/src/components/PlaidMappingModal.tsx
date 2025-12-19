@@ -19,7 +19,6 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
   const [plaidPrimaryCategory, setPlaidPrimaryCategory] = useState('')
   const [plaidDetailedCategory, setPlaidDetailedCategory] = useState('')
   const [categoryId, setCategoryId] = useState<number | undefined>()
-  const [confidence, setConfidence] = useState(1.0)
   const [autoApply, setAutoApply] = useState(true)
 
   // Fetch categories for dropdown
@@ -40,14 +39,12 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
       setPlaidPrimaryCategory(mapping.plaid_primary_category)
       setPlaidDetailedCategory(mapping.plaid_detailed_category || '')
       setCategoryId(mapping.category_id)
-      setConfidence(mapping.confidence)
       setAutoApply(mapping.auto_apply)
     } else {
       // Reset form for create
       setPlaidPrimaryCategory('')
       setPlaidDetailedCategory('')
       setCategoryId(undefined)
-      setConfidence(1.0)
       setAutoApply(true)
     }
   }, [mapping, isOpen])
@@ -63,7 +60,7 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: { category_id: number; confidence: number; auto_apply: boolean } }) =>
+    mutationFn: ({ id, updates }: { id: number; updates: { category_id: number; auto_apply: boolean } }) =>
       plaidMappingsApi.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plaid-mappings'] })
@@ -83,7 +80,7 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
       plaid_primary_category: plaidPrimaryCategory,
       plaid_detailed_category: plaidDetailedCategory || undefined,
       category_id: categoryId,
-      confidence,
+      confidence: 1.0,
       auto_apply: autoApply,
     }
 
@@ -92,7 +89,6 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
         id: mapping.id,
         updates: {
           category_id: categoryId,
-          confidence,
           auto_apply: autoApply,
         },
       })
@@ -186,25 +182,6 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Confidence */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confidence: {confidence.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              className="w-full"
-              value={confidence}
-              onChange={(e) => setConfidence(Number(e.target.value))}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              How confident you are in this mapping (0.0 - 1.0)
-            </p>
           </div>
 
           {/* Auto Apply */}

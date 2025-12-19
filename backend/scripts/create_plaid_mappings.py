@@ -90,8 +90,9 @@ def extract_primary_category(detailed_category: str) -> str:
     parts = detailed_category.split("_")
     if len(parts) >= 2:
         # For categories like FOOD_AND_DRINK_*, primary is FOOD_AND_DRINK
+        # For BANK_FEES_*, primary is BANK_FEES
         # For TRANSPORTATION_*, primary is TRANSPORTATION
-        if parts[0] in ["FOOD", "GENERAL", "RENT", "HOME", "PERSONAL"]:
+        if parts[0] in ["FOOD", "GENERAL", "RENT", "HOME", "PERSONAL", "BANK", "LOAN"]:
             return "_".join(parts[:3]) if len(parts) >= 3 else "_".join(parts[:2])
         return parts[0]
     return detailed_category
@@ -116,9 +117,6 @@ def create_plaid_mappings():
         print(f"\nFound {len(users)} active user(s)")
         print()
 
-        # Get all categories
-        categories = {cat.beancount_account: cat for cat in db.query(Category).all()}
-
         total_created = 0
         total_skipped = 0
         missing_categories = []
@@ -128,14 +126,20 @@ def create_plaid_mappings():
             created_count = 0
             skipped_count = 0
 
+            # Get categories for this specific user
+            user_categories = {
+                cat.beancount_account: cat
+                for cat in db.query(Category).filter(Category.user_id == user.id).all()
+            }
+
             for detailed_category, beancount_account in PLAID_CATEGORY_MAPPINGS.items():
-                # Check if category exists
-                if beancount_account not in categories:
+                # Check if category exists for this user
+                if beancount_account not in user_categories:
                     if beancount_account not in missing_categories:
                         missing_categories.append(beancount_account)
                     continue
 
-                category = categories[beancount_account]
+                category = user_categories[beancount_account]
                 primary_category = extract_primary_category(detailed_category)
 
                 # Check if mapping already exists for this user
