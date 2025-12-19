@@ -219,6 +219,7 @@ class PlaidService:
                         official_name=plaid_account.official_name,
                         account_id=f"plaid_{plaid_account.account_id}",
                         plaid_account_id=plaid_account.account_id,
+                        plaid_item_id=plaid_item.item_id,
                         type=plaid_account.type.value,
                         subtype=subtype_str,
                         institution_name=plaid_item.institution_name,
@@ -246,6 +247,7 @@ class PlaidService:
                     account.name = plaid_account.name
                     account.official_name = plaid_account.official_name
                     account.subtype = subtype_str
+                    account.plaid_item_id = plaid_item.item_id  # Ensure this is set
                     account.institution_name = plaid_item.institution_name
                     account.institution_id = plaid_item.institution_id
                     account.environment = environment
