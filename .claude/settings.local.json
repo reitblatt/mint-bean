@@ -47,7 +47,8 @@
       "Bash(gh run view:*)",
       "Bash(npm run build:*)",
       "Bash(npm run lint)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(source:*)"
     ]
   }
 }
