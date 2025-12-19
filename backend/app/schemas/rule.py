@@ -1,9 +1,10 @@
 """Rule schemas."""
 
+import json
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class RuleBase(BaseModel):
@@ -46,3 +47,11 @@ class RuleResponse(RuleBase):
     last_matched_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("conditions", "actions", mode="before")
+    @classmethod
+    def parse_json_fields(cls, v: Any) -> dict[str, Any]:
+        """Parse JSON string fields to dict."""
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
