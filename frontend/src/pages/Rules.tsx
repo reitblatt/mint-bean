@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { rulesApi } from '@/api/rules'
 import { plaidMappingsApi } from '@/api/plaidMappings'
-import { categoriesApi } from '@/api/categories'
 import RuleFormModal from '@/components/RuleFormModal'
 import PlaidMappingModal from '@/components/PlaidMappingModal'
-import type { Rule, PlaidCategoryMapping, Category } from '@/api/types'
+import type { Rule, PlaidCategoryMapping } from '@/api/types'
 
 export default function Rules() {
   const queryClient = useQueryClient()
@@ -30,12 +29,6 @@ export default function Rules() {
   const { data: mappings, isLoading: mappingsLoading, error: mappingsError } = useQuery({
     queryKey: ['plaid-mappings'],
     queryFn: () => plaidMappingsApi.list(),
-  })
-
-  // Fetch categories for display
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoriesApi.list({ includeInactive: false }),
   })
 
   // Delete mutation
@@ -107,11 +100,6 @@ export default function Rules() {
     if (deleteMappingConfirmId) {
       deleteMappingMutation.mutate(deleteMappingConfirmId)
     }
-  }
-
-  const getCategoryName = (categoryId: number): string => {
-    const category = categories?.find((cat: Category) => cat.id === categoryId)
-    return category?.display_name || `Category ${categoryId}`
   }
 
   const getConditionSummary = (conditions: Record<string, unknown>): string => {
