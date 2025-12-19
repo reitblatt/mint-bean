@@ -176,11 +176,14 @@ export default function PlaidMappingModal({ isOpen, onClose, mapping }: PlaidMap
               required
             >
               <option value="">Select a category</option>
-              {categories?.map((cat: Category) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.display_name} ({cat.category_type})
-                </option>
-              ))}
+              {categories
+                ?.slice()
+                .sort((a, b) => a.display_name.localeCompare(b.display_name))
+                .map((cat: Category) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.display_name} ({cat.beancount_account})
+                  </option>
+                ))}
             </select>
           </div>
 

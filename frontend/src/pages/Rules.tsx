@@ -476,8 +476,17 @@ export default function Rules() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {mapping.category?.display_name || `Category ${mapping.category_id}`}
+                      <td className="px-4 py-3 text-sm">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {mapping.category?.display_name || `Category ${mapping.category_id}`}
+                          </div>
+                          {mapping.category?.beancount_account && (
+                            <div className="text-xs text-gray-500">
+                              {mapping.category.beancount_account}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {mapping.auto_apply ? (
