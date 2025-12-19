@@ -117,11 +117,23 @@ export default function Rules() {
   const getConditionSummary = (conditions: Record<string, unknown>): string => {
     if (!conditions) return 'No conditions'
 
-    // Handle simple condition
+    // Handle field-as-key format (e.g., { "plaid_detailed_category": { "operator": "equals", "value": "..." } })
+    const keys = Object.keys(conditions)
+    if (keys.length === 1 && typeof conditions[keys[0]] === 'object') {
+      const fieldName = keys[0]
+      const condition = conditions[fieldName] as { operator?: string; value?: string }
+      if (condition.operator && condition.value !== undefined) {
+        const field = fieldName.replace(/_/g, ' ')
+        const operator = condition.operator.replace(/_/g, ' ')
+        return `${field} ${operator} "${condition.value}"`
+      }
+    }
+
+    // Handle simple condition with explicit field
     const cond = conditions as { field?: string; operator?: string; value?: string }
     if (cond.field && cond.operator && cond.value !== undefined) {
-      const field = cond.field.replace('_', ' ')
-      const operator = cond.operator.replace('_', ' ')
+      const field = cond.field.replace(/_/g, ' ')
+      const operator = cond.operator.replace(/_/g, ' ')
       return `${field} ${operator} "${cond.value}"`
     }
 
@@ -468,7 +480,7 @@ export default function Rules() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {getCategoryName(mapping.category_id)}
+                        {mapping.category?.display_name || `Category ${mapping.category_id}`}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         <div className="flex items-center">

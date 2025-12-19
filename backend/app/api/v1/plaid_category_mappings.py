@@ -1,7 +1,7 @@
 """Plaid Category Mapping API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
@@ -35,7 +35,11 @@ def list_mappings(
     Returns:
         List of Plaid category mappings
     """
-    query = db.query(PlaidCategoryMapping).filter(PlaidCategoryMapping.user_id == current_user.id)
+    query = (
+        db.query(PlaidCategoryMapping)
+        .options(joinedload(PlaidCategoryMapping.category))
+        .filter(PlaidCategoryMapping.user_id == current_user.id)
+    )
 
     if plaid_primary_category:
         query = query.filter(PlaidCategoryMapping.plaid_primary_category == plaid_primary_category)

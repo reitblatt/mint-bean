@@ -122,6 +122,7 @@ export interface PlaidCategoryMapping {
   plaid_primary_category: string
   plaid_detailed_category?: string
   category_id: number
+  category: Category  // Full category object
   confidence: number
   auto_apply: boolean
   match_count: number

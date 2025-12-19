@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.category import CategoryResponse
+
 
 class PlaidCategoryMappingBase(BaseModel):
     """Base Plaid category mapping schema."""
@@ -35,6 +37,7 @@ class PlaidCategoryMappingResponse(PlaidCategoryMappingBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    category: CategoryResponse  # Include full category object
     match_count: int
     last_matched_at: datetime | None = None
     created_at: datetime
