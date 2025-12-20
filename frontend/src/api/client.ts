@@ -51,11 +51,16 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      // Handle unauthorized - clear auth and redirect to login
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('auth_user')
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+      // Don't redirect if we're checking onboarding status or completing onboarding
+      const isOnboardingEndpoint = error.config?.url?.includes('/onboarding')
+
+      if (!isOnboardingEndpoint) {
+        // Handle unauthorized - clear auth and redirect to login
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
       }
     } else if (error.response?.status === 500) {
       console.error('Server error:', error.response.data)
