@@ -3,9 +3,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
+    container_name: mintbean-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - ./data:/app/data
       # Mount beancount files in read-only mode
@@ -29,6 +28,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+    container_name: mintbean-frontend
     restart: unless-stopped
     environment:
       # Runtime API URL configuration - can point to any backend
@@ -51,7 +51,11 @@ services:
 
 networks:
   mintbean:
+    name: mintbean
     driver: bridge
+    # Make network external so Nginx Proxy Manager can connect
+    # NPM must be added to this network via:
+    # docker network connect mintbean <npm-container-name>
 
 volumes:
   data:
