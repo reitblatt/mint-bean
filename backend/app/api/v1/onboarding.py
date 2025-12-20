@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import get_password_hash
 from app.core.database import get_db
 from app.models.user import User
+from app.services.category_service import seed_default_categories, seed_default_plaid_mappings
 from app.services.settings_service import get_or_create_settings
 
 router = APIRouter()
@@ -90,6 +91,12 @@ def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db
 
         db.commit()
         db.refresh(admin_user)
+
+        # Seed default categories for the new admin user
+        seed_default_categories(db, admin_user.id)
+
+        # Seed default Plaid category mappings
+        seed_default_plaid_mappings(db, admin_user.id)
 
         return {
             "status": "success",

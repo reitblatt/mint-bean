@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
+from app.models.plaid_category_mapping import PlaidCategoryMapping
 
 
 def create_category(
@@ -564,5 +565,115 @@ def seed_default_categories(db: Session, user_id: int) -> None:
         db, user_id, "Expenses:Uncategorized:Check", "Check", parent_id=uncategorized.id
     )
     create_category(db, user_id, "Expenses:Uncategorized:Misc", "Misc", parent_id=uncategorized.id)
+
+    db.commit()
+
+
+def seed_default_plaid_mappings(db: Session, user_id: int) -> None:
+    """
+    Seed default Plaid category mappings for a new user.
+
+    Maps common Plaid categories to the user's default categories.
+
+    Args:
+        db: Database session
+        user_id: User ID to create mappings for
+    """
+
+    # Helper function to get category ID by name
+    def get_category_id(category_name: str) -> int | None:
+        category = (
+            db.query(Category)
+            .filter(Category.user_id == user_id, Category.name == category_name)
+            .first()
+        )
+        return category.id if category else None
+
+    # Helper function to create mapping
+    def create_mapping(primary: str, detailed: str | None, category_name: str) -> None:
+        category_id = get_category_id(category_name)
+        if not category_id:
+            return
+
+        # Check if mapping already exists
+        existing = (
+            db.query(PlaidCategoryMapping)
+            .filter(
+                PlaidCategoryMapping.user_id == user_id,
+                PlaidCategoryMapping.plaid_primary_category == primary,
+                PlaidCategoryMapping.plaid_detailed_category == detailed,
+            )
+            .first()
+        )
+
+        if existing:
+            return
+
+        mapping = PlaidCategoryMapping(
+            user_id=user_id,
+            plaid_primary_category=primary,
+            plaid_detailed_category=detailed,
+            category_id=category_id,
+            confidence=1.0,
+            auto_apply=True,
+        )
+        db.add(mapping)
+
+    # Transportation
+    create_mapping("TRANSPORTATION", "GAS", "Expenses:Auto-and-Transport:Gas-and-Fuel")
+    create_mapping("TRANSPORTATION", "PARKING", "Expenses:Auto-and-Transport:Parking")
+    create_mapping(
+        "TRANSPORTATION",
+        "PUBLIC_TRANSPORTATION",
+        "Expenses:Auto-and-Transport:Public-Transportation",
+    )
+    create_mapping("TRANSPORTATION", "TAXI", "Expenses:Auto-and-Transport:Taxi")
+    create_mapping("TRANSPORTATION", "TOLLS", "Expenses:Auto-and-Transport:Tolls")
+
+    # Food & Dining
+    create_mapping("FOOD_AND_DRINK", "GROCERIES", "Expenses:Food-and-Dining:Groceries")
+    create_mapping("FOOD_AND_DRINK", "RESTAURANTS", "Expenses:Food-and-Dining:Restaurants")
+    create_mapping("FOOD_AND_DRINK", "FAST_FOOD", "Expenses:Food-and-Dining:Fast-Food")
+    create_mapping("FOOD_AND_DRINK", "COFFEE", "Expenses:Food-and-Dining:Coffee-Shops")
+    create_mapping("FOOD_AND_DRINK", "BAR", "Expenses:Food-and-Dining:Alcohol-and-Bars")
+
+    # Shopping
+    create_mapping("GENERAL_MERCHANDISE", "CLOTHING", "Expenses:Shopping:Clothing")
+    create_mapping(
+        "GENERAL_MERCHANDISE", "ELECTRONICS", "Expenses:Shopping:Electronics-and-Software"
+    )
+    create_mapping("GENERAL_MERCHANDISE", "SPORTING_GOODS", "Expenses:Shopping:Sporting-Goods")
+    create_mapping("GENERAL_MERCHANDISE", "BOOKSTORES", "Expenses:Shopping:Books")
+
+    # Entertainment
+    create_mapping("ENTERTAINMENT", "MUSIC_AND_SHOWS", "Expenses:Entertainment:Music")
+    create_mapping("ENTERTAINMENT", "MOVIES", "Expenses:Entertainment:Movies-and-DVDs")
+    create_mapping("ENTERTAINMENT", "SPORTING_EVENTS", "Expenses:Entertainment:Sporting-Events")
+    create_mapping("ENTERTAINMENT", "AMUSEMENT_PARKS", "Expenses:Entertainment:Amusement")
+    create_mapping("ENTERTAINMENT", "MUSEUMS", "Expenses:Entertainment:Arts")
+
+    # Home & Services
+    create_mapping("HOME_IMPROVEMENT", None, "Expenses:Home:Home-Improvement")
+    create_mapping("GENERAL_SERVICES", "LAUNDRY", "Expenses:Personal-Care:Laundry")
+
+    # Bills & Utilities
+    create_mapping("UTILITIES", "PHONE", "Expenses:Bills-and-Utilities:Mobile-Phone")
+    create_mapping("UTILITIES", "INTERNET", "Expenses:Bills-and-Utilities:Internet")
+    create_mapping("UTILITIES", "CABLE", "Expenses:Bills-and-Utilities:Television")
+
+    # Healthcare
+    create_mapping("HEALTHCARE", "PHARMACY", "Expenses:Health-and-Fitness:Pharmacy")
+    create_mapping("HEALTHCARE", "DENTIST", "Expenses:Health-and-Fitness:Dentist")
+    create_mapping("HEALTHCARE", "DOCTOR", "Expenses:Health-and-Fitness:Doctor")
+
+    # Travel
+    create_mapping("TRAVEL", "AIRLINES", "Expenses:Travel:Air-Travel")
+    create_mapping("TRAVEL", "HOTELS", "Expenses:Travel:Hotel")
+    create_mapping("TRAVEL", "CAR_RENTAL", "Expenses:Travel:Rental-Car-and-Taxi")
+
+    # Fees
+    create_mapping("BANK_FEES", "ATM", "Expenses:Fees-and-Charges:ATM-Fee")
+    create_mapping("BANK_FEES", "OVERDRAFT", "Expenses:Fees-and-Charges:Bank-Fee")
+    create_mapping("BANK_FEES", "LATE_PAYMENT", "Expenses:Fees-and-Charges:Late-Fee")
 
     db.commit()

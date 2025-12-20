@@ -15,7 +15,7 @@ from app.schemas.user import (
     UserRestoreRequest,
     UserUpdate,
 )
-from app.services.category_service import seed_default_categories
+from app.services.category_service import seed_default_categories, seed_default_plaid_mappings
 
 router = APIRouter()
 
@@ -98,6 +98,9 @@ def create_user(
 
     # Seed default categories for the new user
     seed_default_categories(db, db_user.id)
+
+    # Seed default Plaid category mappings
+    seed_default_plaid_mappings(db, db_user.id)
 
     return db_user
 
@@ -291,6 +294,9 @@ def restore_user(
 
         # Seed default categories for fresh start
         seed_default_categories(db, user.id)
+
+        # Seed default Plaid category mappings
+        seed_default_plaid_mappings(db, user.id)
     else:
         # Just restore the user, keeping all data
         db.commit()
