@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { onboardingApi, type OnboardingRequest } from '@/api/onboarding'
 
 export default function Onboarding() {
-  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [step, setStep] = useState<'admin' | 'plaid'>('admin')
 
   // Admin user fields
@@ -22,8 +21,10 @@ export default function Onboarding() {
   const onboardingMutation = useMutation({
     mutationFn: (data: OnboardingRequest) => onboardingApi.complete(data),
     onSuccess: () => {
-      // Redirect to login after successful onboarding
-      navigate('/login')
+      // Invalidate onboarding status and force reload to login page
+      queryClient.invalidateQueries({ queryKey: ['onboarding-status'] })
+      // Use window.location to force a full page reload
+      window.location.href = '/login'
     },
     onError: (err: Error) => {
       setError(err.message || 'Failed to complete onboarding')
