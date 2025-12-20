@@ -13,7 +13,7 @@ from app.schemas.rule import RuleCreate, RuleResponse, RuleUpdate
 router = APIRouter()
 
 
-@router.get("/", response_model=list[RuleResponse])
+@router.get("", response_model=list[RuleResponse])
 def list_rules(
     active_only: bool = True,
     current_user: User = Depends(get_current_user),
@@ -59,7 +59,7 @@ def get_rule(
     return rule
 
 
-@router.post("/", response_model=RuleResponse, status_code=201)
+.post("", response_model=RuleResponse, status_code=201)
 def create_rule(
     rule: RuleCreate,
     current_user: User = Depends(get_current_user),

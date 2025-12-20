@@ -16,7 +16,7 @@ from app.schemas.plaid_category_mapping import (
 router = APIRouter()
 
 
-@router.get("/", response_model=list[PlaidCategoryMappingResponse])
+@router.get("", response_model=list[PlaidCategoryMappingResponse])
 def list_mappings(
     plaid_primary_category: str | None = None,
     auto_apply_only: bool = False,
@@ -83,7 +83,7 @@ def get_mapping(
     return mapping
 
 
-@router.post("/", response_model=PlaidCategoryMappingResponse, status_code=201)
+.post("", response_model=PlaidCategoryMappingResponse, status_code=201)
 def create_mapping(
     mapping: PlaidCategoryMappingCreate,
     current_user: User = Depends(get_current_user),

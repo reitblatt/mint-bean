@@ -18,7 +18,7 @@ from app.services.settings_service import get_or_create_settings
 router = APIRouter()
 
 
-@router.get("/", response_model=TransactionListResponse)
+@router.get("", response_model=TransactionListResponse)
 def list_transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
@@ -123,7 +123,7 @@ def get_transaction(
     return transaction
 
 
-@router.post("/", response_model=TransactionResponse, status_code=201)
+@router.post("", response_model=TransactionResponse, status_code=201)
 def create_transaction(
     transaction: TransactionCreate,
     current_user: User = Depends(get_current_user),

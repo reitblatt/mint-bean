@@ -14,7 +14,7 @@ from app.services.settings_service import get_or_create_settings
 router = APIRouter()
 
 
-@router.get("/", response_model=list[AccountResponse])
+@router.get("", response_model=list[AccountResponse])
 def list_accounts(
     active_only: bool = True,
     current_user: User = Depends(get_current_user),
@@ -77,7 +77,7 @@ def get_account(
     return account
 
 
-@router.post("/", response_model=AccountResponse, status_code=201)
+.post("", response_model=AccountResponse, status_code=201)
 def create_account(
     account: AccountCreate,
     current_user: User = Depends(get_current_user),

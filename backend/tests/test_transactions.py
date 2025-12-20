@@ -34,7 +34,7 @@ class TestListTransactions:
 
     def test_list_empty(self, client: TestClient, auth_headers: dict):
         """Test listing transactions when none exist."""
-        response = client.get("/api/v1/transactions/", headers=auth_headers)
+        response = client.get("/api/v1/transactions", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -45,7 +45,7 @@ class TestListTransactions:
         self, client: TestClient, auth_headers: dict, sample_transaction: Transaction
     ):
         """Test listing transactions with data."""
-        response = client.get("/api/v1/transactions/", headers=auth_headers)
+        response = client.get("/api/v1/transactions", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -81,7 +81,7 @@ class TestListTransactions:
         db.commit()
 
         # Test first page
-        response = client.get("/api/v1/transactions/?page=1&page_size=10", headers=auth_headers)
+        response = client.get("/api/v1/transactions?page=1&page_size=10", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data["transactions"]) == 10
@@ -89,7 +89,7 @@ class TestListTransactions:
         assert data["total_pages"] == 2
 
         # Test second page
-        response = client.get("/api/v1/transactions/?page=2&page_size=10", headers=auth_headers)
+        response = client.get("/api/v1/transactions?page=2&page_size=10", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data["transactions"]) == 5
@@ -138,28 +138,28 @@ class TestListTransactions:
 
         # Test account filter
         response = client.get(
-            f"/api/v1/transactions/?account_id={sample_account.id}", headers=auth_headers
+            f"/api/v1/transactions?account_id={sample_account.id}", headers=auth_headers
         )
         assert response.status_code == 200
         assert response.json()["total"] == 2
 
         # Test category filter
         response = client.get(
-            f"/api/v1/transactions/?category_id={sample_category.id}", headers=auth_headers
+            f"/api/v1/transactions?category_id={sample_category.id}", headers=auth_headers
         )
         assert response.status_code == 200
         assert response.json()["total"] == 1
 
         # Test date range filter
         response = client.get(
-            "/api/v1/transactions/?start_date=2024-03-01&end_date=2024-03-31",
+            "/api/v1/transactions?start_date=2024-03-01&end_date=2024-03-31",
             headers=auth_headers,
         )
         assert response.status_code == 200
         assert response.json()["total"] == 1
 
         # Test search
-        response = client.get("/api/v1/transactions/?search=coffee", headers=auth_headers)
+        response = client.get("/api/v1/transactions?search=coffee", headers=auth_headers)
         assert response.status_code == 200
         assert response.json()["total"] == 1
 
@@ -206,7 +206,7 @@ class TestCreateTransaction:
             "currency": "USD",
         }
 
-        response = client.post("/api/v1/transactions/", json=data, headers=auth_headers)
+        response = client.post("/api/v1/transactions", json=data, headers=auth_headers)
 
         assert response.status_code == 201
         result = response.json()
@@ -224,7 +224,7 @@ class TestCreateTransaction:
             "currency": "USD",
         }
 
-        response = client.post("/api/v1/transactions/", json=data, headers=auth_headers)
+        response = client.post("/api/v1/transactions", json=data, headers=auth_headers)
 
         # Should fail due to foreign key constraint
         assert response.status_code in [400, 500]
@@ -345,7 +345,7 @@ class TestPendingTransactionWorkflow:
             "pending": True,
         }
 
-        create_response = client.post("/api/v1/transactions/", json=data, headers=auth_headers)
+        create_response = client.post("/api/v1/transactions", json=data, headers=auth_headers)
         assert create_response.status_code == 201
         txn_id = create_response.json()["id"]
 

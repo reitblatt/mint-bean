@@ -21,7 +21,7 @@ from app.schemas.category import (
 router = APIRouter()
 
 
-@router.get("/", response_model=list[CategoryResponse])
+@router.get("", response_model=list[CategoryResponse])
 def list_categories(
     category_type: str = None,
     current_user: User = Depends(get_current_user),
@@ -129,7 +129,7 @@ def get_category(
     return category
 
 
-@router.post("/", response_model=CategoryResponse, status_code=201)
+.post("", response_model=CategoryResponse, status_code=201)
 def create_category(
     category: CategoryCreate,
     current_user: User = Depends(get_current_user),
