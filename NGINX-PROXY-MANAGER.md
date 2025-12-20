@@ -94,20 +94,11 @@ docker compose up -d
    - **HSTS Enabled**: ✅
 
 4. **Advanced Tab (IMPORTANT):**
-   ```nginx
-   # Backend API routing
-   location /api {
-       proxy_pass http://mintbean-backend:8000;
-       proxy_set_header Host $host;
-       proxy_set_header X-Real-IP $remote_addr;
-       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-       proxy_set_header X-Forwarded-Proto $scheme;
-       proxy_set_header X-Forwarded-Host $host;
-       proxy_set_header X-Forwarded-Port $server_port;
-   }
 
-   # Health check endpoint (backend)
-   location /health {
+   Add this custom nginx configuration to route `/api` to the backend:
+
+   ```nginx
+   location /api {
        proxy_pass http://mintbean-backend:8000;
        proxy_set_header Host $host;
        proxy_set_header X-Real-IP $remote_addr;
@@ -115,6 +106,8 @@ docker compose up -d
        proxy_set_header X-Forwarded-Proto $scheme;
    }
    ```
+
+   **Note**: Do NOT use the "Custom Locations" tab - it can cause health check failures. Use the Advanced tab instead.
 
 5. **Click "Save"**
 
