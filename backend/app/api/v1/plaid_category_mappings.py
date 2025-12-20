@@ -83,7 +83,7 @@ def get_mapping(
     return mapping
 
 
-.post("", response_model=PlaidCategoryMappingResponse, status_code=201)
+@router.post("", response_model=PlaidCategoryMappingResponse, status_code=201)
 def create_mapping(
     mapping: PlaidCategoryMappingCreate,
     current_user: User = Depends(get_current_user),

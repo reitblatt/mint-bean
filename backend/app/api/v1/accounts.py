@@ -77,7 +77,7 @@ def get_account(
     return account
 
 
-.post("", response_model=AccountResponse, status_code=201)
+@router.post("", response_model=AccountResponse, status_code=201)
 def create_account(
     account: AccountCreate,
     current_user: User = Depends(get_current_user),
