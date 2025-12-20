@@ -29,9 +29,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-    restart: unless-stopped    
+    restart: unless-stopped
+    environment:
+      # Runtime API URL configuration - can point to any backend
+      # Examples:
+      #   - /api/v1 (same domain, path-based routing via reverse proxy)
+      #   - https://api.example.com/api/v1 (different subdomain)
+      #   - http://mintbean-backend:8000/api/v1 (direct container access)
+      - API_URL=${API_URL:-/api/v1}
     depends_on:
       mintbean-backend:
         condition: service_healthy

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # API Settings
     DEBUG: bool = True
     SECRET_KEY: str = "change-me-in-production"
+    # CORS origins: comma-separated list or "*" for all origins (dev only)
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     # JWT Authentication
@@ -41,8 +42,10 @@ class Settings(BaseSettings):
 
     @property
     def BACKEND_CORS_ORIGINS(self) -> list[str]:
-        """Parse CORS origins from comma-separated string."""
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        """Parse CORS origins from comma-separated string or wildcard."""
+        if self.ALLOWED_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
 
 settings = Settings()

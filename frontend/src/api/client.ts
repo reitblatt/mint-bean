@@ -1,9 +1,30 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Runtime config injected by Docker container at startup
+declare global {
+  interface Window {
+    __RUNTIME_CONFIG__?: {
+      apiUrl: string
+    }
+  }
+}
+
+// Priority: Runtime config > Build-time env var > Development default
+const getApiBaseUrl = (): string => {
+  // Check for runtime config first (production)
+  if (window.__RUNTIME_CONFIG__?.apiUrl) {
+    return window.__RUNTIME_CONFIG__.apiUrl
+  }
+  // Fall back to build-time env var (if set)
+  if (import.meta.env.VITE_API_URL) {
+    return `${import.meta.env.VITE_API_URL}/api/v1`
+  }
+  // Development default
+  return 'http://localhost:8000/api/v1'
+}
 
 export const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1`,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
