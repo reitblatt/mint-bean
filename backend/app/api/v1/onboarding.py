@@ -24,7 +24,6 @@ class OnboardingRequest(BaseModel):
     # Admin user details
     admin_email: EmailStr = Field(..., description="Admin user email")
     admin_password: str = Field(..., min_length=8, description="Admin user password")
-    admin_full_name: str = Field(..., min_length=1, description="Admin user full name")
 
     # Plaid configuration
     plaid_client_id: str = Field(..., description="Plaid client ID")
@@ -71,7 +70,6 @@ def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db
         # Create admin user
         admin_user = User(
             email=request.admin_email,
-            full_name=request.admin_full_name,
             hashed_password=get_password_hash(request.admin_password),
             is_active=True,
             is_admin=True,

@@ -11,7 +11,6 @@ export default function Onboarding() {
   const [adminEmail, setAdminEmail] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminConfirmPassword, setAdminConfirmPassword] = useState('')
-  const [adminFullName, setAdminFullName] = useState('')
 
   // Plaid fields
   const [plaidClientId, setPlaidClientId] = useState('')
@@ -36,7 +35,7 @@ export default function Onboarding() {
     setError(null)
 
     // Validation
-    if (!adminEmail || !adminPassword || !adminFullName) {
+    if (!adminEmail || !adminPassword) {
       setError('All fields are required')
       return
     }
@@ -68,7 +67,6 @@ export default function Onboarding() {
     onboardingMutation.mutate({
       admin_email: adminEmail,
       admin_password: adminPassword,
-      admin_full_name: adminFullName,
       plaid_client_id: plaidClientId,
       plaid_secret: plaidSecret,
       plaid_environment: plaidEnvironment,
@@ -113,20 +111,6 @@ export default function Onboarding() {
           {step === 'admin' ? (
             <form onSubmit={handleAdminNext}>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Create Admin Account</h2>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={adminFullName}
-                  onChange={(e) => setAdminFullName(e.target.value)}
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">

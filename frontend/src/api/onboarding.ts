@@ -7,7 +7,6 @@ export interface OnboardingStatus {
 export interface OnboardingRequest {
   admin_email: string
   admin_password: string
-  admin_full_name: string
   plaid_client_id: string
   plaid_secret: string
   plaid_environment: 'sandbox' | 'development' | 'production'
