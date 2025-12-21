@@ -26,6 +26,15 @@ class OnboardingRequest(BaseModel):
     admin_email: EmailStr = Field(..., description="Admin user email")
     admin_password: str = Field(..., min_length=8, description="Admin user password")
 
+    # Database configuration
+    database_type: str = Field("sqlite", description="Database type (sqlite or mysql)")
+    database_host: str | None = Field(None, description="MySQL host (MySQL only)")
+    database_port: int = Field(3306, description="MySQL port (MySQL only)")
+    database_name: str | None = Field(None, description="MySQL database name (MySQL only)")
+    database_user: str | None = Field(None, description="MySQL username (MySQL only)")
+    database_password: str | None = Field(None, description="MySQL password (MySQL only)")
+    sqlite_path: str = Field("./data/mintbean.db", description="SQLite file path (SQLite only)")
+
     # Plaid configuration
     plaid_client_id: str = Field(..., description="Plaid client ID")
     plaid_secret: str = Field(..., description="Plaid secret")
@@ -60,6 +69,28 @@ def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db
             detail="Onboarding already complete. Users already exist.",
         )
 
+    # Validate database type
+    if request.database_type not in ["sqlite", "mysql"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid database type. Must be sqlite or mysql.",
+        )
+
+    # Validate MySQL configuration if MySQL is selected
+    if request.database_type == "mysql":
+        if not all(
+            [
+                request.database_host,
+                request.database_name,
+                request.database_user,
+                request.database_password,
+            ]
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="MySQL configuration requires host, name, user, and password.",
+            )
+
     # Validate Plaid environment
     if request.plaid_environment not in ["sandbox", "development", "production"]:
         raise HTTPException(
@@ -77,8 +108,21 @@ def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db
         )
         db.add(admin_user)
 
-        # Update Plaid settings
+        # Update application settings
         settings = get_or_create_settings(db)
+
+        # Database configuration
+        settings.database_type = request.database_type
+        if request.database_type == "mysql":
+            settings.database_host = request.database_host
+            settings.database_port = request.database_port
+            settings.database_name = request.database_name
+            settings.database_user = request.database_user
+            settings.database_password = request.database_password
+        else:
+            settings.sqlite_path = request.sqlite_path
+
+        # Plaid configuration
         settings.plaid_client_id = request.plaid_client_id
 
         # Set the secret based on environment

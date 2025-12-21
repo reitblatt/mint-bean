@@ -8,12 +8,43 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
-# Create SQLAlchemy engine
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
-    echo=settings.DEBUG,
-)
+
+def get_database_url() -> str:
+    """
+    Get the database URL.
+
+    Uses DATABASE_URL from environment/config.
+    During onboarding, this will be the bootstrap SQLite database.
+    After onboarding, the application will use the configured database.
+
+    Returns:
+        Database URL string
+    """
+    return settings.DATABASE_URL
+
+
+def create_db_engine(database_url: str | None = None):
+    """
+    Create a SQLAlchemy engine.
+
+    Args:
+        database_url: Optional database URL. If not provided, uses get_database_url()
+
+    Returns:
+        SQLAlchemy engine
+    """
+    url = database_url or get_database_url()
+    connect_args = {}
+
+    # SQLite-specific connection args
+    if "sqlite" in url:
+        connect_args["check_same_thread"] = False
+
+    return create_engine(url, connect_args=connect_args, echo=settings.DEBUG)
+
+
+# Create SQLAlchemy engine using bootstrap DATABASE_URL
+engine = create_db_engine()
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

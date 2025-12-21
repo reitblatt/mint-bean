@@ -48,7 +48,9 @@
       "Bash(npm run build:*)",
       "Bash(npm run lint)",
       "Bash(npm run type-check:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(docker logs:*)",
+      "Bash(grep:*)"
     ]
   }
 }

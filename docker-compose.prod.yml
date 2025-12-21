@@ -1,4 +1,25 @@
 services:
+  # Optional MySQL database (can be used instead of SQLite)
+  # Uncomment this service if you chose MySQL during onboarding
+  # mintbean-mysql:
+  #   image: mysql:8.0
+  #   container_name: mintbean-mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme_root}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE:-mintbean}
+  #     MYSQL_USER: ${MYSQL_USER:-mintbean_user}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme_password}
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - mintbean
+
   mintbean-backend:
     build:
       context: ./backend
@@ -12,9 +33,15 @@ services:
     env_file:
       - .env
     environment:
+      # Bootstrap database - used only for initial connection
+      # After onboarding, database settings are stored in app_settings table
       - DATABASE_URL=sqlite:///./data/mintbean.db
       - PYTHONUNBUFFERED=1
       - DEBUG=false
+    # Uncomment this if using MySQL
+    # depends_on:
+    #   mintbean-mysql:
+    #     condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -60,3 +87,6 @@ networks:
 volumes:
   data:
     driver: local
+  # Uncomment if using MySQL
+  # mysql_data:
+  #   driver: local
