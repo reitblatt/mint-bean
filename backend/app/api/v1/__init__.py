@@ -5,9 +5,11 @@ from fastapi import APIRouter
 from app.api.v1 import (
     accounts,
     admin,
+    analytics,
     auth,
     beancount,
     categories,
+    dashboards,
     deletion,
     onboarding,
     plaid,
@@ -43,3 +45,7 @@ api_router.include_router(
 api_router.include_router(beancount.router, prefix="/beancount", tags=["beancount"])
 
 api_router.include_router(deletion.router, prefix="/deletion", tags=["deletion"])
+
+api_router.include_router(dashboards.router, prefix="/dashboards", tags=["dashboards"])
+
+api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])

@@ -50,7 +50,10 @@
       "Bash(npm run type-check:*)",
       "Bash(source:*)",
       "Bash(docker logs:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)"
     ]
   }
 }

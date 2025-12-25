@@ -8,6 +8,7 @@ from app.core.auth import get_password_hash
 from app.core.database import get_db
 from app.models.user import User
 from app.services.category_service import seed_default_categories, seed_default_plaid_mappings
+from app.services.dashboard_service import create_default_dashboard
 from app.services.settings_service import get_or_create_settings
 
 router = APIRouter()
@@ -141,6 +142,9 @@ def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db
 
         # Seed default Plaid category mappings
         seed_default_plaid_mappings(db, admin_user.id)
+
+        # Create default dashboard for the new admin user
+        create_default_dashboard(db, admin_user)
 
         return {
             "status": "success",

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import Layout from '@/components/Layout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Login from '@/pages/Login'
-import Dashboard from '@/pages/Dashboard'
+import DashboardCustom from '@/pages/DashboardCustom'
 import Transactions from '@/pages/Transactions'
 import Accounts from '@/pages/Accounts'
 import Categories from '@/pages/Categories'
@@ -54,7 +54,7 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<DashboardCustom />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="categories" element={<Categories />} />

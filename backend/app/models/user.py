@@ -36,6 +36,9 @@ class User(Base):
     plaid_category_mappings = relationship(
         "PlaidCategoryMapping", back_populates="user", cascade="all, delete-orphan"
     )
+    dashboard_tabs = relationship(
+        "DashboardTab", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', is_admin={self.is_admin})>"
