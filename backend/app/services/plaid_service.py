@@ -533,6 +533,7 @@ class PlaidService:
 
         # Try Plaid category mapping first
         if transaction.plaid_primary_category:
+            # Try exact match on detailed category first
             mapping = (
                 db.query(PlaidCategoryMapping)
                 .filter(
@@ -554,6 +555,25 @@ class PlaidService:
                 )
                 .first()
             )
+
+            # If no exact match, try matching just on primary category (fallback)
+            if not mapping:
+                mapping = (
+                    db.query(PlaidCategoryMapping)
+                    .filter(
+                        PlaidCategoryMapping.plaid_primary_category
+                        == transaction.plaid_primary_category,
+                        PlaidCategoryMapping.auto_apply.is_(True),
+                    )
+                    .order_by(PlaidCategoryMapping.confidence.desc())
+                    .first()
+                )
+                if mapping:
+                    logger.info(
+                        f"Using fallback primary-only match for {transaction.transaction_id}: "
+                        f"{transaction.plaid_primary_category} (detailed: {transaction.plaid_detailed_category}) "
+                        f"→ mapping for {mapping.plaid_detailed_category or 'ANY'}"
+                    )
 
             if mapping:
                 transaction.category_id = mapping.category_id
