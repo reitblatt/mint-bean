@@ -58,7 +58,33 @@ export default function FlexibleWidgetRenderer({
   const { data, isLoading, error } = useQuery({
     queryKey: ['widget-data', widget.id, widgetType, startDate, endDate],
     queryFn: async () => {
-      if (widgetType === 'summary_card') {
+      // Handle legacy widget types (from old default dashboard)
+      if (widgetType === 'line_chart' || widgetType === 'bar_chart') {
+        // Legacy time series widgets (spending_over_time, etc.)
+        const response = await apiClient.post(
+          `/analytics/query/time-series?${params}`,
+          {
+            metric: 'total_spending',
+            chart_type: widgetType === 'line_chart' ? 'line' : 'bar',
+            granularity: config.granularity || 'daily',
+            filters: [],
+          }
+        )
+        return response.data
+      } else if (widgetType === 'pie_chart') {
+        // Legacy breakdown widgets (spending_by_category, etc.)
+        const response = await apiClient.post(
+          `/analytics/query/breakdown?${params}`,
+          {
+            metric: 'total_spending',
+            group_by: 'category',
+            chart_type: 'pie',
+            limit: config.limit || 10,
+            filters: [],
+          }
+        )
+        return response.data
+      } else if (widgetType === 'summary_card') {
         const response = await apiClient.post(
           `/analytics/query/metric?${params}`,
           {
@@ -138,14 +164,16 @@ export default function FlexibleWidgetRenderer({
     )
   }
 
-  // Render time series
-  if (widgetType === 'time_series' && data && data.data) {
+  // Render time series (both new and legacy)
+  if ((widgetType === 'time_series' || widgetType === 'line_chart' || widgetType === 'bar_chart') && data && data.data) {
     const chartData = data.data
     const ChartComponent =
-      config.chart_type === 'area'
-        ? AreaChart
-        : config.chart_type === 'bar'
+      widgetType === 'line_chart' || config.chart_type === 'line'
+        ? LineChart
+        : widgetType === 'bar_chart' || config.chart_type === 'bar'
         ? BarChart
+        : config.chart_type === 'area'
+        ? AreaChart
         : LineChart
 
     return (
@@ -159,7 +187,7 @@ export default function FlexibleWidgetRenderer({
             <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
             {config.chart_type === 'area' ? (
               <Area type="monotone" dataKey="value" fill="#4f46e5" stroke="#4f46e5" />
-            ) : config.chart_type === 'bar' ? (
+            ) : widgetType === 'bar_chart' || config.chart_type === 'bar' ? (
               <Bar dataKey="value" fill="#4f46e5" />
             ) : (
               <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2} />
@@ -175,11 +203,11 @@ export default function FlexibleWidgetRenderer({
     )
   }
 
-  // Render breakdown
-  if (widgetType === 'breakdown' && data && data.data) {
+  // Render breakdown (both new and legacy)
+  if ((widgetType === 'breakdown' || widgetType === 'pie_chart') && data && data.data) {
     const breakdownData = data.data
 
-    if (config.chart_type === 'pie') {
+    if (widgetType === 'pie_chart' || config.chart_type === 'pie') {
       return (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{widget.title}</h3>
