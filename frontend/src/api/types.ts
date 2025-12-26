@@ -209,8 +209,134 @@ export interface DashboardWidgetUpdate {
   config?: string
 }
 
-// Widget configuration types
-export interface WidgetConfig {
+// Widget configuration types with discriminated unions for type safety
+
+// Enums matching backend
+export type MetricType =
+  | 'total_balance'
+  | 'net_worth'
+  | 'total_spending'
+  | 'total_income'
+  | 'net_income'
+  | 'transaction_count'
+  | 'uncategorized_count'
+  | 'account_count'
+
+export type ChartType = 'line' | 'area' | 'bar' | 'pie'
+export type Granularity = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+export type GroupByField = 'category' | 'account' | 'merchant' | 'date' | 'month'
+
+export type FilterOperator =
+  | 'eq'
+  | 'ne'
+  | 'in'
+  | 'not_in'
+  | 'gt'
+  | 'lt'
+  | 'contains'
+  | 'is_null'
+  | 'is_not_null'
+
+export type FilterField =
+  | 'amount'
+  | 'date'
+  | 'category_id'
+  | 'account_id'
+  | 'merchant_name'
+  | 'description'
+  | 'pending'
+  | 'reviewed'
+  | 'plaid_primary_category'
+  | 'plaid_detailed_category'
+
+export interface TransactionFilter {
+  field: FilterField
+  operator: FilterOperator
+  value?: unknown
+}
+
+// Base widget config
+interface BaseWidgetConfig {
+  filters?: TransactionFilter[]
+}
+
+// Specific widget configs with discriminated union
+export interface SummaryCardConfig extends BaseWidgetConfig {
+  widget_type: 'summary_card'
+  metric: MetricType
+}
+
+export interface TimeSeriesConfig extends BaseWidgetConfig {
+  widget_type: 'time_series'
+  metric: MetricType
+  chart_type: ChartType
+  granularity: Granularity
+}
+
+export interface BreakdownConfig extends BaseWidgetConfig {
+  widget_type: 'breakdown'
+  metric: MetricType
+  group_by: GroupByField
+  chart_type: ChartType
+  limit: number
+}
+
+// Legacy widget types for backwards compatibility
+export interface LegacyLineChartConfig {
+  widget_type: 'line_chart'
+  data_type?: string
+  granularity?: string
+  limit?: number
+}
+
+export interface LegacyPieChartConfig {
+  widget_type: 'pie_chart'
+  data_type?: string
+  limit?: number
+}
+
+export interface LegacyBarChartConfig {
+  widget_type: 'bar_chart'
+  data_type?: string
+  limit?: number
+}
+
+// Union type of all possible widget configs
+export type WidgetConfig =
+  | SummaryCardConfig
+  | TimeSeriesConfig
+  | BreakdownConfig
+  | LegacyLineChartConfig
+  | LegacyPieChartConfig
+  | LegacyBarChartConfig
+
+// Type guard functions
+export function isSummaryCardConfig(config: WidgetConfig): config is SummaryCardConfig {
+  return config.widget_type === 'summary_card'
+}
+
+export function isTimeSeriesConfig(config: WidgetConfig): config is TimeSeriesConfig {
+  return config.widget_type === 'time_series'
+}
+
+export function isBreakdownConfig(config: WidgetConfig): config is BreakdownConfig {
+  return config.widget_type === 'breakdown'
+}
+
+export function isLegacyLineChartConfig(config: WidgetConfig): config is LegacyLineChartConfig {
+  return config.widget_type === 'line_chart'
+}
+
+export function isLegacyPieChartConfig(config: WidgetConfig): config is LegacyPieChartConfig {
+  return config.widget_type === 'pie_chart'
+}
+
+export function isLegacyBarChartConfig(config: WidgetConfig): config is LegacyBarChartConfig {
+  return config.widget_type === 'bar_chart'
+}
+
+// Deprecated - kept for backwards compatibility
+export interface WidgetConfigLegacy {
   metric?: string
   data_type?: string
   granularity?: string

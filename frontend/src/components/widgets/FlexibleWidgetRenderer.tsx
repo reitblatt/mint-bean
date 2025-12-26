@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/api/client'
-import type { DashboardWidget } from '@/api/types'
+import type { DashboardWidget, WidgetConfig } from '@/api/types'
+import {
+  isSummaryCardConfig,
+  isTimeSeriesConfig,
+  isBreakdownConfig,
+  isLegacyLineChartConfig,
+  isLegacyPieChartConfig,
+  isLegacyBarChartConfig,
+} from '@/api/types'
 import {
   ResponsiveContainer,
   LineChart,
@@ -44,83 +52,104 @@ export default function FlexibleWidgetRenderer({
   startDate,
   endDate,
 }: FlexibleWidgetRendererProps) {
-  // Parse widget config
-  const config = widget.config ? JSON.parse(widget.config) : {}
-  // For backwards compatibility, check both config.widget_type and widget.widget_type
-  const widgetType = config.widget_type || widget.widget_type || 'summary_card'
+  // Parse widget config with type safety
+  const parsedConfig: WidgetConfig | null = widget.config
+    ? (() => {
+        try {
+          const config = JSON.parse(widget.config)
+          // For backwards compatibility, merge widget_type from database column if not in config
+          return {
+            ...config,
+            widget_type: config.widget_type || widget.widget_type || 'summary_card',
+          }
+        } catch {
+          return null
+        }
+      })()
+    : null
 
   // Build query parameters
   const params = new URLSearchParams()
   if (startDate) params.append('start_date', startDate)
   if (endDate) params.append('end_date', endDate)
 
-  // Fetch data based on widget type
+  // Fetch data based on widget type with type guards
   const { data, isLoading, error } = useQuery({
-    queryKey: ['widget-data', widget.id, widgetType, startDate, endDate],
+    queryKey: ['widget-data', widget.id, parsedConfig?.widget_type, startDate, endDate],
     queryFn: async () => {
-      // Handle legacy widget types (from old default dashboard)
-      if (widgetType === 'line_chart' || widgetType === 'bar_chart') {
-        // Legacy time series widgets (spending_over_time, etc.)
-        const response = await apiClient.post(
-          `/analytics/query/time-series?${params}`,
-          {
-            metric: 'total_spending',
-            chart_type: widgetType === 'line_chart' ? 'line' : 'bar',
-            granularity: config.granularity || 'daily',
-            filters: [],
-          }
-        )
-        return response.data
-      } else if (widgetType === 'pie_chart') {
-        // Legacy breakdown widgets (spending_by_category, etc.)
-        const response = await apiClient.post(
-          `/analytics/query/breakdown?${params}`,
-          {
-            metric: 'total_spending',
-            group_by: 'category',
-            chart_type: 'pie',
-            limit: config.limit || 10,
-            filters: [],
-          }
-        )
-        return response.data
-      } else if (widgetType === 'summary_card') {
-        const response = await apiClient.post(
-          `/analytics/query/metric?${params}`,
-          {
-            metric: config.metric || 'total_balance',
-            filters: Array.isArray(config.filters) ? config.filters : [],
-          }
-        )
-        return response.data
-      } else if (widgetType === 'time_series') {
-        const response = await apiClient.post(
-          `/analytics/query/time-series?${params}`,
-          {
-            metric: config.metric || 'total_spending',
-            chart_type: config.chart_type || 'line',
-            granularity: config.granularity || 'daily',
-            filters: Array.isArray(config.filters) ? config.filters : [],
-          }
-        )
-        return response.data
-      } else if (widgetType === 'breakdown') {
-        const response = await apiClient.post(
-          `/analytics/query/breakdown?${params}`,
-          {
-            metric: config.metric || 'total_spending',
-            group_by: config.group_by || 'category',
-            chart_type: config.chart_type || 'bar',
-            limit: config.limit || 10,
-            filters: Array.isArray(config.filters) ? config.filters : [],
-          }
-        )
+      if (!parsedConfig) return null
+
+      // Handle legacy line/bar chart widgets
+      if (isLegacyLineChartConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/time-series?${params}`, {
+          metric: 'total_spending',
+          chart_type: 'line',
+          granularity: parsedConfig.granularity || 'daily',
+          filters: [],
+        })
         return response.data
       }
+
+      if (isLegacyBarChartConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/time-series?${params}`, {
+          metric: 'total_spending',
+          chart_type: 'bar',
+          granularity: parsedConfig.granularity || 'daily',
+          filters: [],
+        })
+        return response.data
+      }
+
+      // Handle legacy pie chart widgets
+      if (isLegacyPieChartConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/breakdown?${params}`, {
+          metric: 'total_spending',
+          group_by: 'category',
+          chart_type: 'pie',
+          limit: parsedConfig.limit || 10,
+          filters: [],
+        })
+        return response.data
+      }
+
+      // Handle summary card widgets
+      if (isSummaryCardConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/metric?${params}`, {
+          metric: parsedConfig.metric,
+          filters: parsedConfig.filters || [],
+        })
+        return response.data
+      }
+
+      // Handle time series widgets
+      if (isTimeSeriesConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/time-series?${params}`, {
+          metric: parsedConfig.metric,
+          chart_type: parsedConfig.chart_type,
+          granularity: parsedConfig.granularity,
+          filters: parsedConfig.filters || [],
+        })
+        return response.data
+      }
+
+      // Handle breakdown widgets
+      if (isBreakdownConfig(parsedConfig)) {
+        const response = await apiClient.post(`/analytics/query/breakdown?${params}`, {
+          metric: parsedConfig.metric,
+          group_by: parsedConfig.group_by,
+          chart_type: parsedConfig.chart_type,
+          limit: parsedConfig.limit,
+          filters: parsedConfig.filters || [],
+        })
+        return response.data
+      }
+
       return null
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
+
+  const config = parsedConfig
 
   if (isLoading) {
     return (
@@ -141,7 +170,7 @@ export default function FlexibleWidgetRenderer({
   }
 
   // Render summary card
-  if (widgetType === 'summary_card' && data) {
+  if (config && isSummaryCardConfig(config) && data) {
     const isBalance = config.metric === 'total_balance' || config.metric === 'net_worth'
     const isCurrency =
       isBalance ||
@@ -165,14 +194,19 @@ export default function FlexibleWidgetRenderer({
   }
 
   // Render time series (both new and legacy)
-  if ((widgetType === 'time_series' || widgetType === 'line_chart' || widgetType === 'bar_chart') && data && data.data) {
+  if (
+    config &&
+    (isTimeSeriesConfig(config) || isLegacyLineChartConfig(config) || isLegacyBarChartConfig(config)) &&
+    data &&
+    data.data
+  ) {
     const chartData = data.data
     const ChartComponent =
-      widgetType === 'line_chart' || config.chart_type === 'line'
+      isLegacyLineChartConfig(config) || (isTimeSeriesConfig(config) && config.chart_type === 'line')
         ? LineChart
-        : widgetType === 'bar_chart' || config.chart_type === 'bar'
+        : isLegacyBarChartConfig(config) || (isTimeSeriesConfig(config) && config.chart_type === 'bar')
         ? BarChart
-        : config.chart_type === 'area'
+        : isTimeSeriesConfig(config) && config.chart_type === 'area'
         ? AreaChart
         : LineChart
 
@@ -185,16 +219,16 @@ export default function FlexibleWidgetRenderer({
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
-            {config.chart_type === 'area' ? (
+            {isTimeSeriesConfig(config) && config.chart_type === 'area' ? (
               <Area type="monotone" dataKey="value" fill="#4f46e5" stroke="#4f46e5" />
-            ) : widgetType === 'bar_chart' || config.chart_type === 'bar' ? (
+            ) : isLegacyBarChartConfig(config) || (isTimeSeriesConfig(config) && config.chart_type === 'bar') ? (
               <Bar dataKey="value" fill="#4f46e5" />
             ) : (
               <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2} />
             )}
           </ChartComponent>
         </ResponsiveContainer>
-        {config.filters && config.filters.length > 0 && (
+        {isTimeSeriesConfig(config) && config.filters && config.filters.length > 0 && (
           <p className="text-xs text-gray-500 mt-2">
             {config.filters.length} filter{config.filters.length > 1 ? 's' : ''} applied
           </p>
@@ -204,10 +238,10 @@ export default function FlexibleWidgetRenderer({
   }
 
   // Render breakdown (both new and legacy)
-  if ((widgetType === 'breakdown' || widgetType === 'pie_chart') && data && data.data) {
+  if (config && (isBreakdownConfig(config) || isLegacyPieChartConfig(config)) && data && data.data) {
     const breakdownData = data.data
 
-    if (widgetType === 'pie_chart' || config.chart_type === 'pie') {
+    if (isLegacyPieChartConfig(config) || (isBreakdownConfig(config) && config.chart_type === 'pie')) {
       return (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{widget.title}</h3>
@@ -230,7 +264,7 @@ export default function FlexibleWidgetRenderer({
               <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
             </PieChart>
           </ResponsiveContainer>
-          {config.filters && config.filters.length > 0 && (
+          {isBreakdownConfig(config) && config.filters && config.filters.length > 0 && (
             <p className="text-xs text-gray-500 mt-2">
               {config.filters.length} filter{config.filters.length > 1 ? 's' : ''} applied
             </p>
@@ -251,7 +285,7 @@ export default function FlexibleWidgetRenderer({
               <Bar dataKey="value" fill="#4f46e5" />
             </BarChart>
           </ResponsiveContainer>
-          {config.filters && config.filters.length > 0 && (
+          {isBreakdownConfig(config) && config.filters && config.filters.length > 0 && (
             <p className="text-xs text-gray-500 mt-2">
               {config.filters.length} filter{config.filters.length > 1 ? 's' : ''} applied
             </p>
