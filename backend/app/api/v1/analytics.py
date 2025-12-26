@@ -1,8 +1,9 @@
 """Analytics API endpoints for dashboard widgets."""
 
 from datetime import date, timedelta
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,12 @@ from app.schemas.analytics import (
     TimeSeriesDataPoint,
     TimeSeriesResponse,
 )
+from app.schemas.widget_config import (
+    BreakdownConfig,
+    SummaryCardConfig,
+    TimeSeriesConfig,
+)
+from app.services.analytics_service import AnalyticsService
 
 router = APIRouter()
 
@@ -261,3 +268,76 @@ def get_spending_by_merchant(
         )
 
     return MerchantBreakdownResponse(data=breakdown, total_amount=total_amount)
+
+
+# Flexible widget query endpoints
+
+
+@router.post("/query/metric")
+def query_metric(
+    config: SummaryCardConfig = Body(...),
+    start_date: date | None = Query(None, description="Start date for metric"),
+    end_date: date | None = Query(None, description="End date for metric"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Query a single metric with filters."""
+    service = AnalyticsService(db, current_user)
+    value = service.calculate_metric(
+        metric=config.metric,
+        start_date=start_date,
+        end_date=end_date,
+        filters=config.filters,
+    )
+    return {"metric": config.metric.value, "value": value}
+
+
+@router.post("/query/time-series")
+def query_time_series(
+    config: TimeSeriesConfig = Body(...),
+    start_date: date = Query(..., description="Start date for time series"),
+    end_date: date = Query(..., description="End date for time series"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Query time series data with filters."""
+    service = AnalyticsService(db, current_user)
+    data = service.get_time_series(
+        metric=config.metric,
+        start_date=start_date,
+        end_date=end_date,
+        granularity=config.granularity,
+        filters=config.filters,
+    )
+    return {
+        "metric": config.metric.value,
+        "granularity": config.granularity.value,
+        "chart_type": config.chart_type.value,
+        "data": data,
+    }
+
+
+@router.post("/query/breakdown")
+def query_breakdown(
+    config: BreakdownConfig = Body(...),
+    start_date: date | None = Query(None, description="Start date for breakdown"),
+    end_date: date | None = Query(None, description="End date for breakdown"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Query breakdown data with filters."""
+    service = AnalyticsService(db, current_user)
+    data = service.get_breakdown(
+        metric=config.metric,
+        group_by=config.group_by,
+        start_date=start_date,
+        end_date=end_date,
+        limit=config.limit,
+        filters=config.filters,
+    )
+    return {
+        "metric": config.metric.value,
+        "group_by": config.group_by.value,
+        "chart_type": config.chart_type.value,
+        "data": data,
+    }

@@ -1,1 +1,1 @@
-"""Tests for MintBean backend."""
+"""Tests package for Mint Bean backend."""
