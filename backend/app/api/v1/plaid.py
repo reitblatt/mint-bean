@@ -224,7 +224,7 @@ def exchange_public_token(
     db: Session = Depends(get_db),
 ) -> PublicTokenExchangeResponse:
     """
-    Exchange public token for access token.
+    Exchange public token for access token and automatically sync accounts/transactions.
 
     Args:
         request: Public token exchange request
@@ -251,6 +251,19 @@ def exchange_public_token(
         plaid_item = service.exchange_public_token(
             request.public_token, db, user_id=current_user.id
         )
+
+        # Automatically sync accounts and transactions for the new item
+        try:
+            service.get_accounts(plaid_item, db)
+            service.sync_transactions(plaid_item, db)
+        except Exception as sync_error:
+            # Log but don't fail the token exchange if sync fails
+            # The user can manually sync later
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to auto-sync item {plaid_item.item_id}: {sync_error}")
+
         return PublicTokenExchangeResponse(
             item_id=plaid_item.item_id,
             institution_id=plaid_item.institution_id,
