@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
-from typing import Any
+from datetime import date, datetime, timedelta
+from typing import TypedDict
 
 from sqlalchemy import func
 from sqlalchemy.orm import Query, Session
@@ -22,6 +22,21 @@ from app.schemas.widget_config import (
 )
 
 
+class TimeSeriesDataPoint(TypedDict):
+    """Type-safe structure for time series data points."""
+
+    date: str  # ISO format date string
+    value: float
+
+
+class BreakdownDataPoint(TypedDict):
+    """Type-safe structure for breakdown data points."""
+
+    label: str
+    value: float
+    percentage: float
+
+
 class AnalyticsService:
     """Service for executing flexible analytics queries."""
 
@@ -29,6 +44,23 @@ class AnalyticsService:
         """Initialize service with database session and user."""
         self.db = db
         self.user = user
+
+    @staticmethod
+    def _normalize_date(dt: datetime | date) -> date:
+        """Convert datetime to date for consistent key matching.
+
+        This prevents bugs where datetime objects from SQLAlchemy queries
+        are used as dictionary keys but looked up with date objects.
+
+        Args:
+            dt: A datetime or date object
+
+        Returns:
+            A date object (datetime.date() if input was datetime)
+        """
+        if isinstance(dt, datetime):
+            return dt.date()
+        return dt
 
     def apply_filters(self, query: Query, filters: list[TransactionFilter]) -> Query:
         """Apply filters to a transaction query."""
@@ -183,10 +215,15 @@ class AnalyticsService:
         end_date: date,
         granularity: Granularity = Granularity.DAILY,
         filters: list[TransactionFilter] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Get time series data for a metric."""
+    ) -> list[TimeSeriesDataPoint]:
+        """Get time series data for a metric.
+
+        Returns:
+            List of data points with ISO date strings and float values.
+            Dates from SQLAlchemy are normalized to prevent datetime/date mismatches.
+        """
         filters = filters or []
-        data_points = []
+        data_points: list[TimeSeriesDataPoint] = []
 
         # For balance-based metrics, we need to calculate cumulative balance
         if metric in [MetricType.TOTAL_BALANCE, MetricType.NET_WORTH]:
@@ -269,8 +306,10 @@ class AnalyticsService:
 
             transactions = query.all()
 
-            # Convert to dict for easy lookup
-            data_by_date = dict(transactions)
+            # Convert to dict for easy lookup (normalize datetime to date for key matching)
+            data_by_date: dict[date, float] = {
+                self._normalize_date(tx_date): total for tx_date, total in transactions
+            }
 
             # Create data points for each time period
             current_date = start_date
@@ -304,8 +343,12 @@ class AnalyticsService:
         end_date: date | None = None,
         limit: int = 10,
         filters: list[TransactionFilter] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Get breakdown data grouped by a field."""
+    ) -> list[BreakdownDataPoint]:
+        """Get breakdown data grouped by a field.
+
+        Returns:
+            List of breakdown data points with label, value, and percentage.
+        """
         filters = filters or []
 
         # Determine amount filter based on metric
@@ -357,7 +400,7 @@ class AnalyticsService:
         total_amount = sum(abs(total) for _, total in results)
 
         # Build breakdown data
-        breakdown = []
+        breakdown: list[BreakdownDataPoint] = []
         for group_value, total in results:
             # Get label for the group
             label = str(group_value or "Unknown")
