@@ -14,7 +14,7 @@ class AccountBase(BaseModel):
     subtype: str | None = None
     beancount_account: str
     currency: str = "USD"
-    active: bool = True
+    is_active: bool = True
 
 
 class AccountCreate(AccountBase):
@@ -36,7 +36,7 @@ class AccountUpdate(BaseModel):
     beancount_account: str | None = None
     current_balance: float | None = None
     available_balance: float | None = None
-    active: bool | None = None
+    is_active: bool | None = None
     needs_reconnection: bool | None = None
 
 

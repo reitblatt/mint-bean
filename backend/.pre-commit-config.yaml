@@ -14,7 +14,28 @@ repos:
       - id: ruff
         args: [--fix]
 
-  # Run tests before commit
+  # Security checks for data isolation
+  - repo: local
+    hooks:
+      - id: user-isolation-check
+        name: Check for missing user_id filters
+        entry: python backend/.ruff_security.py
+        language: system
+        types: [python]
+        files: ^backend/app/api/
+        pass_filenames: true
+
+  # Run data isolation tests
+  - repo: local
+    hooks:
+      - id: pytest-isolation
+        name: pytest (data isolation tests)
+        entry: bash -c 'cd backend && source venv/bin/activate && pytest tests/test_data_isolation.py -v'
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # Run all tests before commit
   - repo: local
     hooks:
       - id: pytest
