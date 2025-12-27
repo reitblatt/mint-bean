@@ -406,7 +406,7 @@ class AnalyticsService:
             label = str(group_value or "Unknown")
             if group_by == GroupByField.CATEGORY and group_value:
                 category = self.db.query(Category).filter(Category.id == group_value).first()
-                label = category.name if category else "Unknown"
+                label = category.display_name if category else "Unknown"
             elif group_by == GroupByField.CATEGORY and not group_value:
                 label = "Uncategorized"
             elif group_by == GroupByField.ACCOUNT and group_value:

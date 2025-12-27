@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: user-isolation-check
         name: Check for missing user_id filters
-        entry: python backend/.ruff_security.py
+        entry: python3 backend/.ruff_security.py
         language: system
         types: [python]
         files: ^backend/app/api/

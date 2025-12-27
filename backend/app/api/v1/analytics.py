@@ -193,7 +193,7 @@ def get_spending_by_category(
     for category_id, total, count in results:
         if category_id:
             category = db.query(Category).filter(Category.id == category_id).first()
-            category_name = category.name if category else "Unknown"
+            category_name = category.display_name if category else "Unknown"
         else:
             category_name = "Uncategorized"
 
