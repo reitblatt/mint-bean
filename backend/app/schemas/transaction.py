@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.category import CategoryResponse
+
 
 class TransactionBase(BaseModel):
     """Base transaction schema."""
@@ -54,6 +56,7 @@ class TransactionResponse(TransactionBase):
     transaction_id: str
     account_id: int
     category_id: int | None = None
+    category: CategoryResponse | None = None
     beancount_account: str | None = None
     plaid_transaction_id: str | None = None
     plaid_primary_category: str | None = None

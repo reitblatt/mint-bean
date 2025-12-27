@@ -298,7 +298,16 @@ export interface LegacyPieChartConfig {
 export interface LegacyBarChartConfig {
   widget_type: 'bar_chart'
   data_type?: string
+  granularity?: string
   limit?: number
+}
+
+export interface TableConfig {
+  widget_type: 'table'
+  filters?: {
+    limit?: number
+    sort?: string
+  }
 }
 
 // Union type of all possible widget configs
@@ -309,6 +318,7 @@ export type WidgetConfig =
   | LegacyLineChartConfig
   | LegacyPieChartConfig
   | LegacyBarChartConfig
+  | TableConfig
 
 // Type guard functions
 export function isSummaryCardConfig(config: WidgetConfig): config is SummaryCardConfig {
@@ -333,6 +343,10 @@ export function isLegacyPieChartConfig(config: WidgetConfig): config is LegacyPi
 
 export function isLegacyBarChartConfig(config: WidgetConfig): config is LegacyBarChartConfig {
   return config.widget_type === 'bar_chart'
+}
+
+export function isTableConfig(config: WidgetConfig): config is TableConfig {
+  return config.widget_type === 'table'
 }
 
 // Deprecated - kept for backwards compatibility

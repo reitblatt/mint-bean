@@ -8,7 +8,9 @@ import {
   isLegacyLineChartConfig,
   isLegacyPieChartConfig,
   isLegacyBarChartConfig,
+  isTableConfig,
 } from '@/api/types'
+import TransactionTableWidget from './TransactionTableWidget'
 import {
   ResponsiveContainer,
   LineChart,
@@ -293,6 +295,11 @@ export default function FlexibleWidgetRenderer({
         </div>
       )
     }
+  }
+
+  // Render table widget
+  if (config && isTableConfig(config)) {
+    return <TransactionTableWidget title={widget.title} config={config} startDate={startDate} endDate={endDate} />
   }
 
   return (

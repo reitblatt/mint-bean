@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import { transactionsApi } from '@/api/transactions'
-import type { WidgetConfig } from '@/api/types'
+import type { TableConfig } from '@/api/types'
 
 interface TransactionTableWidgetProps {
   title: string
-  config: WidgetConfig
+  config: TableConfig
   startDate?: string
   endDate?: string
 }
