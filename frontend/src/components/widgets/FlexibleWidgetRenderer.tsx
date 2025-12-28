@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/api/client'
-import type { DashboardWidget, WidgetConfig } from '@/api/types'
+import type { DashboardWidget, WidgetConfig, BreakdownDataPoint } from '@/api/types'
 import {
   isSummaryCardConfig,
   isTimeSeriesConfig,
@@ -249,7 +249,6 @@ export default function FlexibleWidgetRenderer({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{widget.title}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Pie
                 data={breakdownData}
                 dataKey="value"
@@ -257,9 +256,12 @@ export default function FlexibleWidgetRenderer({
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={(entry: any) => `${entry.label}: ${formatCurrency(entry.value)}`}
+                label={(entry) => {
+                  const dataPoint = entry as unknown as BreakdownDataPoint
+                  return `${dataPoint.label}: ${formatCurrency(dataPoint.value)}`
+                }}
               >
-                {breakdownData.map((_: any, index: number) => (
+                {breakdownData.map((_: BreakdownDataPoint, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

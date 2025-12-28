@@ -44,11 +44,12 @@ export default function DashboardCustom() {
         start = startOfMonth(today)
         end = endOfMonth(today)
         break
-      case 'last-month':
+      case 'last-month': {
         const lastMonth = subMonths(today, 1)
         start = startOfMonth(lastMonth)
         end = endOfMonth(lastMonth)
         break
+      }
       case 'last-3-months':
         start = startOfMonth(subMonths(today, 2))
         end = endOfMonth(today)

@@ -249,10 +249,19 @@ export type FilterField =
   | 'plaid_primary_category'
   | 'plaid_detailed_category'
 
+// Type for filter values based on field and operator combinations
+export type FilterValue =
+  | number[] // For 'in' and 'not_in' operators with category_id or account_id
+  | number // For 'eq', 'ne', 'gt', 'lt' with amount or category_id or account_id
+  | string // For 'eq', 'ne', 'contains' with string fields
+  | boolean // For 'eq', 'ne' with pending or reviewed
+  | null // For 'is_null' and 'is_not_null' operators
+  | undefined // When no value is set yet
+
 export interface TransactionFilter {
   field: FilterField
   operator: FilterOperator
-  value?: unknown
+  value?: FilterValue
 }
 
 // Base widget config
@@ -402,4 +411,20 @@ export interface MerchantBreakdown {
 export interface MerchantBreakdownResponse {
   data: MerchantBreakdown[]
   total_amount: number
+}
+
+// Analytics query response types (from analytics_service.py)
+export interface BreakdownDataPoint {
+  label: string
+  value: number
+  percentage: number
+}
+
+export interface TimeSeriesDataPoint {
+  date: string
+  value: number
+}
+
+export interface AnalyticsQueryResponse {
+  data: BreakdownDataPoint[] | TimeSeriesDataPoint[]
 }

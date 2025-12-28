@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { dashboardsApi } from '@/api/dashboards'
 import { categoriesApi } from '@/api/categories'
 import { accountsApi } from '@/api/accounts'
-import type { DashboardWidget } from '@/api/types'
+import type { DashboardWidget, TransactionFilter, Category, Account } from '@/api/types'
 
 interface FlexibleWidgetEditorProps {
   isOpen: boolean
@@ -64,12 +64,8 @@ type FilterField =
   | 'plaid_primary_category'
   | 'plaid_detailed_category'
 
-interface Filter {
-  field: FilterField
-  operator: FilterOperator
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any
-}
+// Use TransactionFilter from types instead of local definition with 'any'
+type Filter = TransactionFilter
 
 interface WidgetConfig {
   widget_type: WidgetType
@@ -195,9 +191,18 @@ export default function FlexibleWidgetEditor({
     }
   }, [widget])
 
+  interface WidgetData {
+    widget_type: WidgetType
+    title: string
+    grid_row: number
+    grid_col: number
+    grid_width: number
+    grid_height: number
+    config: string
+  }
+
   const createMutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: (data: any) => dashboardsApi.createWidget(tabId, data),
+    mutationFn: (data: WidgetData) => dashboardsApi.createWidget(tabId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-tab', tabId] })
       onClose()
@@ -205,8 +210,7 @@ export default function FlexibleWidgetEditor({
   })
 
   const updateMutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: (data: any) => dashboardsApi.updateWidget(tabId, widget!.id, data),
+    mutationFn: (data: WidgetData) => dashboardsApi.updateWidget(tabId, widget!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-tab', tabId] })
       onClose()
@@ -470,7 +474,9 @@ export default function FlexibleWidgetEditor({
                         <select
                           multiple
                           className="input"
-                          value={filter.value || []}
+                          value={
+                            ((filter.value as number[] | undefined) || []).map((v) => String(v))
+                          }
                           onChange={(e) =>
                             updateFilter(index, {
                               value: Array.from(e.target.selectedOptions, (o) =>
@@ -480,8 +486,7 @@ export default function FlexibleWidgetEditor({
                           }
                           size={3}
                         >
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {categories?.map((cat: any) => (
+                          {categories?.map((cat: Category) => (
                             <option key={cat.id} value={cat.id}>
                               {cat.display_name || cat.name}
                             </option>
@@ -492,7 +497,9 @@ export default function FlexibleWidgetEditor({
                         <select
                           multiple
                           className="input"
-                          value={filter.value || []}
+                          value={
+                            ((filter.value as number[] | undefined) || []).map((v) => String(v))
+                          }
                           onChange={(e) =>
                             updateFilter(index, {
                               value: Array.from(e.target.selectedOptions, (o) =>
@@ -502,8 +509,7 @@ export default function FlexibleWidgetEditor({
                           }
                           size={3}
                         >
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {accounts?.map((acc: any) => (
+                          {accounts?.map((acc: Account) => (
                             <option key={acc.id} value={acc.id}>
                               {acc.name}
                             </option>
@@ -520,7 +526,7 @@ export default function FlexibleWidgetEditor({
                         <input
                           type={filter.field === 'amount' ? 'number' : 'text'}
                           className="input"
-                          value={filter.value || ''}
+                          value={(filter.value as string | number | undefined) || ''}
                           onChange={(e) => updateFilter(index, { value: e.target.value })}
                           placeholder="Value"
                         />
