@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, set_current_user_for_rls
 from app.models.user import User
 
 # Password hashing
@@ -121,6 +121,9 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user",
         )
+
+    # Set user context for Row-Level Security (PostgreSQL only)
+    set_current_user_for_rls(user.id)
 
     return user
 
