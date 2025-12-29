@@ -18,6 +18,7 @@ from app.core.metrics import (
     http_request_duration_seconds,
     http_requests_in_progress,
     http_requests_total,
+    update_pool_metrics,
 )
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.startup import run_startup_checks
@@ -39,6 +40,8 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         """Track request metrics."""
         # Skip metrics for /metrics endpoint to avoid recursion
         if request.url.path == "/metrics":
+            # Update pool metrics before serving /metrics endpoint
+            update_pool_metrics(engine)
             return await call_next(request)
 
         method = request.method

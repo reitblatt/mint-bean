@@ -30,22 +30,61 @@ def get_database_url() -> str:
 
 def create_db_engine(database_url: str | None = None):
     """
-    Create a SQLAlchemy engine.
+    Create a SQLAlchemy engine with optimized connection pooling.
+
+    Connection Pool Configuration:
+    - PostgreSQL/MySQL: QueuePool with 5-20 connections, max overflow 10
+    - SQLite: NullPool (no pooling, SQLite is file-based)
+
+    Pool Settings:
+    - pool_size: Number of permanent connections (default: 5)
+    - max_overflow: Additional connections when pool exhausted (default: 10)
+    - pool_timeout: Seconds to wait for connection (default: 30)
+    - pool_recycle: Recycle connections after 1 hour (prevents stale connections)
+    - pool_pre_ping: Test connection before using (ensures valid connections)
 
     Args:
         database_url: Optional database URL. If not provided, uses get_database_url()
 
     Returns:
-        SQLAlchemy engine
+        SQLAlchemy engine with optimized pooling
     """
+    import os
+
     url = database_url or get_database_url()
     connect_args = {}
+    engine_kwargs = {"echo": settings.DEBUG}
 
-    # SQLite-specific connection args
+    # SQLite-specific configuration
     if "sqlite" in url:
         connect_args["check_same_thread"] = False
+        # Use NullPool for SQLite (no connection pooling needed)
+        from sqlalchemy.pool import NullPool
 
-    return create_engine(url, connect_args=connect_args, echo=settings.DEBUG)
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        # PostgreSQL/MySQL production configuration
+        # Pool size: number of permanent connections to maintain
+        pool_size = int(os.getenv("DB_POOL_SIZE", "5"))
+        # Max overflow: additional connections beyond pool_size
+        max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+        # Pool timeout: seconds to wait for a connection
+        pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+        # Pool recycle: recycle connections after this many seconds (prevents stale connections)
+        pool_recycle = int(os.getenv("DB_POOL_RECYCLE", "3600"))  # 1 hour
+
+        engine_kwargs.update(
+            {
+                "pool_size": pool_size,
+                "max_overflow": max_overflow,
+                "pool_timeout": pool_timeout,
+                "pool_recycle": pool_recycle,
+                # Pre-ping: test connection before using (small overhead, ensures valid connections)
+                "pool_pre_ping": True,
+            }
+        )
+
+    return create_engine(url, connect_args=connect_args, **engine_kwargs)
 
 
 # Create SQLAlchemy engine using bootstrap DATABASE_URL
