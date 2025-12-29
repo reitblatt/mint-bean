@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 # Set encryption key for testing (before importing models)
 # This is a test-only key - never use in production!
-os.environ.setdefault("ENCRYPTION_KEY", "test-key-DO-NOT-USE-IN-PRODUCTION-" + "=" * 20)
+os.environ.setdefault("ENCRYPTION_KEY", "GhPOXJpn8ALN8oF9LzcyqUe24gUZmL9lIMUeVKTtwhU=")
 
 from app.core.database import Base, get_db
 from app.main import app
@@ -41,10 +41,10 @@ def db() -> Generator[Session, None, None]:
     session = TestingSessionLocal()
 
     # Create default app settings for tests
+    # Note: We don't set encrypted fields (plaid secrets, db password) in test fixtures
+    # to avoid encryption overhead. Tests that need these should set them explicitly.
     settings = AppSettings(
         plaid_client_id="test_client_id",
-        plaid_sandbox_secret="test_sandbox_secret",
-        plaid_production_secret="test_production_secret",
         plaid_environment="sandbox",
         created_at=datetime.now(),
         updated_at=datetime.now(),

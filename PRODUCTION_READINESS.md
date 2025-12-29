@@ -5,6 +5,8 @@ This document tracks the production readiness status of MintBean. Items are orga
 **Last Updated:** 2025-12-29
 **Overall Score:** 60/100
 
+**Infrastructure**: See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for detailed self-hosted architecture, deployment scenarios, and cost comparisons. All solutions listed below are open-source and self-hosted.
+
 ---
 
 ## ✅ Completed Items
@@ -58,18 +60,20 @@ This document tracks the production readiness status of MintBean. Items are orga
   - Impact: Medium - prevents runtime failures from misconfiguration
 
 ### Monitoring & Observability
-- [ ] **Error Tracking (Sentry)**
+- [ ] **Error Tracking (Self-Hosted)**
   - Issue: No centralized error tracking
-  - Solution: Integrate Sentry SDK
-  - Files: `app/main.py`, new `app/core/sentry.py`
-  - Dependencies: `sentry-sdk[fastapi]`
+  - Solution: Deploy GlitchTip (Sentry-compatible, self-hosted)
+  - Files: `app/main.py`, new `app/core/error_tracking.py`, `docker-compose.monitoring.yml`
+  - Dependencies: `sentry-sdk[fastapi]` (works with GlitchTip)
+  - Reference: See INFRASTRUCTURE.md for setup
   - Impact: High - essential for debugging production issues
 
-- [ ] **Centralized Logging**
+- [ ] **Centralized Logging (Grafana Loki)**
   - Issue: Logs only go to stdout
-  - Solution: Add structured logging with JSON formatter
-  - Files: New `app/core/logging.py`, update all modules
-  - Dependencies: `python-json-logger`
+  - Solution: Deploy Grafana Loki + Promtail for log aggregation
+  - Files: New `app/core/logging.py`, `monitoring/loki/`, `monitoring/promtail/`
+  - Dependencies: `python-logging-loki`
+  - Reference: See INFRASTRUCTURE.md for configuration
   - Impact: High - essential for troubleshooting
 
 - [ ] **Health Check Endpoints**
@@ -109,25 +113,25 @@ This document tracks the production readiness status of MintBean. Items are orga
   - Files: `app/core/database.py`
   - Impact: Medium - identifies performance bottlenecks
 
-- [ ] **Response Caching**
+- [ ] **Response Caching (Optional)**
   - Issue: No caching layer for expensive queries
-  - Solution: Add Redis for caching analytics queries
-  - Files: New `app/core/cache.py`, update analytics endpoints
+  - Solution: Add Redis for caching analytics queries (self-hosted)
+  - Files: New `app/core/cache.py`, update analytics endpoints, `docker-compose.prod.yml`
   - Dependencies: `redis`, `aioredis`
   - Impact: Medium - improves response times
 
 - [ ] **Load Testing**
   - Issue: No performance benchmarks
-  - Solution: Add locust or k6 load tests
+  - Solution: Add k6 (open-source) or locust load tests
   - Files: New `tests/load/` directory
-  - Dependencies: `locust`
+  - Dependencies: `k6` (standalone) or `locust`
   - Impact: Medium - validates system can handle expected load
 
 ### Background Jobs
-- [ ] **Task Queue (Celery/arq)**
+- [ ] **Task Queue (Celery with Redis)**
   - Issue: No async task processing for Plaid syncs
-  - Solution: Implement Celery with Redis broker
-  - Files: New `app/tasks/`, `app/core/celery.py`
+  - Solution: Implement Celery with self-hosted Redis broker
+  - Files: New `app/tasks/`, `app/core/celery.py`, `docker-compose.prod.yml`
   - Dependencies: `celery[redis]`
   - Impact: Medium - prevents API timeouts on long operations
 
@@ -155,16 +159,24 @@ This document tracks the production readiness status of MintBean. Items are orga
 ## 🟢 Medium Priority (Nice to Have)
 
 ### Monitoring
-- [ ] **Application Metrics (Prometheus)**
+- [ ] **Application Metrics (Prometheus + Grafana)**
   - Issue: No metrics collection
-  - Solution: Add prometheus_client with custom metrics
-  - Files: New `app/core/metrics.py`
+  - Solution: Deploy self-hosted Prometheus + Grafana stack
+  - Files: New `app/core/metrics.py`, `monitoring/prometheus/`, `monitoring/grafana/`
   - Dependencies: `prometheus-client`
+  - Reference: See INFRASTRUCTURE.md for setup
   - Impact: Low - enables advanced monitoring
 
-- [ ] **Distributed Tracing (OpenTelemetry)**
+- [ ] **Uptime Monitoring (Uptime Kuma)**
+  - Issue: No uptime monitoring or status page
+  - Solution: Deploy self-hosted Uptime Kuma
+  - Files: `docker-compose.monitoring.yml`
+  - Reference: See INFRASTRUCTURE.md for configuration
+  - Impact: Medium - proactive alerting for downtime
+
+- [ ] **Distributed Tracing (OpenTelemetry - Optional)**
   - Issue: No request tracing across services
-  - Solution: Add OpenTelemetry instrumentation
+  - Solution: Add OpenTelemetry instrumentation (self-hosted Jaeger)
   - Files: `app/main.py`, new `app/core/tracing.py`
   - Dependencies: `opentelemetry-*`
   - Impact: Low - helps debug complex request flows
@@ -271,15 +283,17 @@ This document tracks the production readiness status of MintBean. Items are orga
 Based on priority, the recommended order is:
 
 1. ~~**Secrets Encryption** - Encrypt Plaid credentials in database~~ ✅ COMPLETED
-2. **Error Tracking** - Set up Sentry for production error monitoring
-3. **Automated Backups** - Implement PostgreSQL backup strategy
-4. **Centralized Logging** - Add structured JSON logging
-5. **HTTPS/TLS** - Add Nginx reverse proxy with SSL
-6. **Health Checks** - Enhance health endpoints with dependency checks
-7. **Task Queue** - Implement Celery for background jobs
-8. **Load Testing** - Validate performance under expected load
-9. **Security Headers** - Add security middleware
+2. **Self-Hosted Monitoring Stack** - Deploy Prometheus + Grafana + Loki (see INFRASTRUCTURE.md)
+3. **Error Tracking** - Deploy GlitchTip for self-hosted error tracking
+4. **Automated Backups** - Implement PostgreSQL backup strategy (pg_dump script)
+5. **HTTPS/TLS** - Add Nginx reverse proxy with Let's Encrypt
+6. **Uptime Monitoring** - Deploy Uptime Kuma for health checks
+7. **Health Checks** - Enhance health endpoints with dependency checks
+8. **Task Queue** - Implement Celery with self-hosted Redis
+9. **Load Testing** - Validate performance with k6 or locust
 10. **Deployment Docs** - Document production deployment process
+
+**Important**: All solutions are self-hosted and open-source. See INFRASTRUCTURE.md for detailed setup instructions.
 
 ---
 
@@ -288,5 +302,7 @@ Based on priority, the recommended order is:
 - This checklist is living document and should be updated as items are completed
 - New production requirements should be added as they're identified
 - Priority levels may change based on business needs
+- **All solutions are self-hosted and open-source** - no SaaS dependencies
+- See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for detailed architecture and deployment guides
 - Estimated implementation time for all critical items: 2-3 weeks
 - Estimated implementation time for all high priority items: 2-3 weeks
