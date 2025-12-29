@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mintbean-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=mintbean
+      - POSTGRES_USER=mintbean_user
+      - POSTGRES_PASSWORD=mintbean_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mintbean_user -d mintbean"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mintbean
+
   backend:
     build:
       context: ./backend
@@ -14,10 +34,13 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=sqlite:///./data/mintbean.db
+      - DATABASE_URL=postgresql://mintbean_user:mintbean_dev_password@postgres:5432/mintbean
       - PYTHONUNBUFFERED=1
       - DEBUG=true
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -51,5 +74,7 @@ networks:
     driver: bridge
 
 volumes:
+  postgres_data:
+    driver: local
   data:
     driver: local

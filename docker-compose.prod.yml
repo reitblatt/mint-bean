@@ -1,24 +1,22 @@
 services:
-  # Optional MySQL database (can be used instead of SQLite)
-  # Uncomment this service if you chose MySQL during onboarding
-  # mintbean-mysql:
-  #   image: mysql:8.0
-  #   container_name: mintbean-mysql
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme_root}
-  #     MYSQL_DATABASE: ${MYSQL_DATABASE:-mintbean}
-  #     MYSQL_USER: ${MYSQL_USER:-mintbean_user}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme_password}
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - mintbean
+  postgres:
+    image: postgres:15-alpine
+    container_name: mintbean-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mintbean}
+      - POSTGRES_USER=${POSTGRES_USER:-mintbean_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mintbean_user} -d ${POSTGRES_DB:-mintbean}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mintbean
 
   mintbean-backend:
     build:
@@ -33,15 +31,12 @@ services:
     env_file:
       - .env
     environment:
-      # Bootstrap database - used only for initial connection
-      # After onboarding, database settings are stored in app_settings table
-      - DATABASE_URL=sqlite:///./data/mintbean.db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-mintbean_user}:${POSTGRES_PASSWORD:-changeme_password}@postgres:5432/${POSTGRES_DB:-mintbean}
       - PYTHONUNBUFFERED=1
       - DEBUG=false
-    # Uncomment this if using MySQL
-    # depends_on:
-    #   mintbean-mysql:
-    #     condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -85,8 +80,7 @@ networks:
     # docker network connect mintbean <npm-container-name>
 
 volumes:
+  postgres_data:
+    driver: local
   data:
     driver: local
-  # Uncomment if using MySQL
-  # mysql_data:
-  #   driver: local
