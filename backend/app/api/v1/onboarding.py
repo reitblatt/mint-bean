@@ -1,11 +1,12 @@
 """Onboarding API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_password_hash
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.models.user import User
 from app.services.category_service import seed_default_categories, seed_default_plaid_mappings
 from app.services.dashboard_service import create_default_dashboard
@@ -56,11 +57,23 @@ def check_onboarding_status(db: Session = Depends(get_db)) -> OnboardingStatusRe
 
 
 @router.post("/complete")
-def complete_onboarding(request: OnboardingRequest, db: Session = Depends(get_db)) -> dict:
+@limiter.limit("3/hour")
+def complete_onboarding(
+    request_obj: Request, request: OnboardingRequest, db: Session = Depends(get_db)
+) -> dict:
     """
     Complete initial onboarding by creating admin user and configuring Plaid.
 
     This endpoint can only be called when no users exist.
+    Rate limited to 3 attempts per hour to prevent abuse.
+
+    Args:
+        request_obj: FastAPI request object (required for rate limiting)
+        request: Onboarding request data
+        db: Database session
+
+    Raises:
+        HTTPException: If rate limit exceeded or onboarding fails
     """
     # Check if onboarding is still needed
     user_count = db.query(User).count()

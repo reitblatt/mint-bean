@@ -2,12 +2,13 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import authenticate_user, create_access_token, get_current_user
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.models.user import User
 from app.schemas.user import LoginRequest, Token, UserResponse
 
@@ -15,11 +16,15 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token.
 
+    Rate limited to 5 attempts per minute to prevent brute force attacks.
+
     Args:
+        request: FastAPI request object (required for rate limiting)
         credentials: Login credentials (email and password)
         db: Database session
 
@@ -27,7 +32,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         JWT access token
 
     Raises:
-        HTTPException: If authentication fails
+        HTTPException: If authentication fails or rate limit exceeded
     """
     user = authenticate_user(db, credentials.email, credentials.password)
     if not user:
