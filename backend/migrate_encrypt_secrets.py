@@ -74,23 +74,21 @@ def encrypt_existing_secrets(db):
 
     # Check and encrypt database_password
     if settings._database_password and not is_encrypted(settings._database_password):
-        print(f"  Encrypting database_password...")
+        print("  Encrypting database_password...")
         plaintext = settings._database_password
         settings._database_password = encrypt_value(plaintext)
         encrypted_count += 1
 
     # Check and encrypt plaid_sandbox_secret
     if settings._plaid_sandbox_secret and not is_encrypted(settings._plaid_sandbox_secret):
-        print(f"  Encrypting plaid_sandbox_secret...")
+        print("  Encrypting plaid_sandbox_secret...")
         plaintext = settings._plaid_sandbox_secret
         settings._plaid_sandbox_secret = encrypt_value(plaintext)
         encrypted_count += 1
 
     # Check and encrypt plaid_production_secret
-    if settings._plaid_production_secret and not is_encrypted(
-        settings._plaid_production_secret
-    ):
-        print(f"  Encrypting plaid_production_secret...")
+    if settings._plaid_production_secret and not is_encrypted(settings._plaid_production_secret):
+        print("  Encrypting plaid_production_secret...")
         plaintext = settings._plaid_production_secret
         settings._plaid_production_secret = encrypt_value(plaintext)
         encrypted_count += 1
@@ -135,7 +133,9 @@ def main():
     if not os.getenv("ENCRYPTION_KEY"):
         print("\n❌ ERROR: ENCRYPTION_KEY environment variable not set")
         print("\nGenerate a key with:")
-        print('  python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"')
+        print(
+            '  python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+        )
         print("\nThen set it:")
         print("  export ENCRYPTION_KEY='your-key-here'")
         print("  # or add to .env file")

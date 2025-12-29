@@ -10,18 +10,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Set encryption key for testing (before importing models)
-# This is a test-only key - never use in production!
+# Set required environment variables for testing (before importing models)
+# These are test-only values - never use in production!
 os.environ.setdefault("ENCRYPTION_KEY", "GhPOXJpn8ALN8oF9LzcyqUe24gUZmL9lIMUeVKTtwhU=")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-jwt-signing-do-not-use-in-production")
 
-from app.core.database import Base, get_db
-from app.main import app
-from app.models.account import Account
-from app.models.app_settings import AppSettings
-from app.models.category import Category
-from app.models.plaid_item import PlaidItem
-from app.models.transaction import Transaction
-from app.models.user import User
+from app.core.database import Base, get_db  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models.account import Account  # noqa: E402
+from app.models.app_settings import AppSettings  # noqa: E402
+from app.models.category import Category  # noqa: E402
+from app.models.plaid_item import PlaidItem  # noqa: E402
+from app.models.transaction import Transaction  # noqa: E402
+from app.models.user import User  # noqa: E402
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"

@@ -20,7 +20,6 @@ Usage:
 """
 
 import os
-from typing import Optional
 
 from cryptography.fernet import Fernet
 
@@ -42,7 +41,7 @@ def get_encryption_key() -> bytes:
     if not key:
         raise ValueError(
             "ENCRYPTION_KEY environment variable not set. "
-            "Generate one with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            'Generate one with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )
 
     try:
@@ -61,7 +60,7 @@ def get_fernet() -> Fernet:
     return Fernet(get_encryption_key())
 
 
-def encrypt_value(plaintext: Optional[str]) -> Optional[str]:
+def encrypt_value(plaintext: str | None) -> str | None:
     """
     Encrypt a string value.
 
@@ -85,7 +84,7 @@ def encrypt_value(plaintext: Optional[str]) -> Optional[str]:
         raise ValueError(f"Encryption failed: {e}") from e
 
 
-def decrypt_value(ciphertext: Optional[str]) -> Optional[str]:
+def decrypt_value(ciphertext: str | None) -> str | None:
     """
     Decrypt an encrypted string value.
 
@@ -109,7 +108,7 @@ def decrypt_value(ciphertext: Optional[str]) -> Optional[str]:
         raise ValueError(f"Decryption failed: {e}") from e
 
 
-def is_encrypted(value: Optional[str]) -> bool:
+def is_encrypted(value: str | None) -> bool:
     """
     Check if a value appears to be encrypted.
 

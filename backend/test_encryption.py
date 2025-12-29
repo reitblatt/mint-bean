@@ -10,9 +10,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 # Load .env file
 from dotenv import load_dotenv
+
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from app.core.encryption import encrypt_value, decrypt_value, is_encrypted
+from app.core.encryption import decrypt_value, encrypt_value, is_encrypted
+
 
 def test_basic_encryption():
     """Test basic encryption/decryption."""
@@ -24,7 +26,9 @@ def test_basic_encryption():
 
     # Encrypt
     encrypted = encrypt_value(plaintext)
-    print(f"  Encrypted: {encrypted[:50]}..." if len(encrypted) > 50 else f"  Encrypted: {encrypted}")
+    print(
+        f"  Encrypted: {encrypted[:50]}..." if len(encrypted) > 50 else f"  Encrypted: {encrypted}"
+    )
 
     # Decrypt
     decrypted = decrypt_value(encrypted)
@@ -36,6 +40,7 @@ def test_basic_encryption():
     assert not is_encrypted(plaintext), "False positive for is_encrypted!"
 
     print("  ✓ Basic encryption test passed\n")
+
 
 def test_none_and_empty():
     """Test handling of None and empty strings."""
@@ -51,6 +56,7 @@ def test_none_and_empty():
     assert decrypt_value("") == ""
     print("  ✓ Empty string handling correct\n")
 
+
 def test_model_integration():
     """Test encryption with AppSettings model."""
     print("Testing AppSettings model integration...")
@@ -63,9 +69,7 @@ def test_model_integration():
         # Get or create settings
         settings = db.query(AppSettings).first()
         if not settings:
-            settings = AppSettings(
-                plaid_environment="sandbox"
-            )
+            settings = AppSettings(plaid_environment="sandbox")
             db.add(settings)
             db.commit()
 
@@ -91,6 +95,7 @@ def test_model_integration():
     finally:
         db.close()
 
+
 def main():
     """Run all tests."""
     print("=" * 60)
@@ -115,8 +120,10 @@ def main():
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

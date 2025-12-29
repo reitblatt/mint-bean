@@ -24,6 +24,8 @@ ignore = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/conftest.py" = ["E402"]  # Encryption key must be set before model imports
+"migrate_encrypt_secrets.py" = ["E402"]  # Environment setup before imports
+"test_encryption.py" = ["E402"]  # Environment setup before imports
 
 [tool.mypy]
 python_version = "3.11"
