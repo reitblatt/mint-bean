@@ -63,7 +63,26 @@ mint-bean/
 
 ### Quick Start: AWS Deployment (Recommended for Production)
 
-For a turn-key production deployment on AWS with interactive setup wizard:
+#### Option A: One-Click Terraform Deployment (Fastest)
+
+Deploy complete infrastructure with a single command:
+
+```bash
+cd terraform/aws
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your domain and AWS region
+terraform init
+terraform apply
+```
+
+See [terraform/aws/README.md](./terraform/aws/README.md) for complete instructions.
+
+**Estimated time**: 15-20 minutes
+**Monthly cost**: ~$99-108 (optimizable to $50-70)
+
+#### Option B: Manual AWS Setup (Step-by-Step)
+
+For a turn-key production deployment with manual AWS CLI commands:
 
 1. **Follow the AWS deployment guide**: See [DEPLOYMENT_AWS.md](./DEPLOYMENT_AWS.md)
 2. **One-time setup**: The guide walks you through creating AWS resources (RDS, ECS, ALB, etc.)

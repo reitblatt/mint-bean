@@ -1,0 +1,39 @@
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "production"
+project_name = "mintbean"
+
+# Required: Your domain name
+domain_name = "mint.example.com"
+
+# Optional: ACM certificate ARN for HTTPS (leave empty for HTTP only)
+# Get this by requesting a certificate in AWS Certificate Manager
+certificate_arn = ""
+
+# VPC Configuration (optional - defaults work for most deployments)
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Database Configuration (optional - adjust for your needs)
+db_instance_class = "db.t4g.micro"  # Smallest instance (~$15/month)
+db_allocated_storage = 20            # GB
+db_name = "mintbean"
+db_username = "mintbean_admin"
+
+# ECS Configuration (optional - adjust for your traffic)
+backend_cpu = 512      # 0.5 vCPU
+backend_memory = 1024  # 1 GB
+frontend_cpu = 256     # 0.25 vCPU
+frontend_memory = 512  # 512 MB
+desired_count = 1      # Number of tasks
+
+# Cost Optimization Options
+# Uncomment to enable Fargate Spot for 50-70% savings (with some availability risk)
+# use_fargate_spot = true
+
+# Uncomment to enable auto-scaling
+# autoscaling_enabled = true
+# min_capacity = 1
+# max_capacity = 10
+# cpu_target = 70
+# memory_target = 80
