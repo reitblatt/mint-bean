@@ -19,6 +19,7 @@ from app.core.metrics import (
     http_requests_in_progress,
     http_requests_total,
 )
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.startup import run_startup_checks
 
 # Run startup validation checks
@@ -77,6 +78,9 @@ app = FastAPI(
 # Add rate limiter state and error handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Configure security headers middleware (first, so it applies to all responses)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Configure metrics middleware (before CORS so we track all requests)
 app.add_middleware(MetricsMiddleware)
