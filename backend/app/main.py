@@ -71,11 +71,83 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI(
     title="MintBean API",
-    description="A Mint.com clone for beancount accounting",
+    description="""
+# MintBean API
+
+A self-hosted personal finance management system built with FastAPI and Beancount.
+
+## Features
+
+- **Account Management**: Connect and manage financial accounts via Plaid
+- **Transaction Tracking**: Automatic transaction import and categorization
+- **Beancount Integration**: Generate Beancount-formatted accounting files
+- **Category Rules**: Define rules for automatic transaction categorization
+- **Analytics**: Track spending trends and financial insights
+- **Row-Level Security**: Multi-user support with data isolation
+
+## Authentication
+
+All API endpoints (except `/health/*` and authentication endpoints) require JWT authentication.
+
+1. **Login**: POST to `/api/v1/auth/login` with email and password
+2. **Use Token**: Include in all requests as `Authorization: Bearer <token>`
+
+Example:
+```bash
+# Login
+curl -X POST http://localhost:8000/api/v1/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{"email": "user@example.com", "password": "SecurePass123"}'
+
+# Response: {"access_token": "eyJ...", "token_type": "bearer"}
+
+# Use token in requests
+curl -X GET http://localhost:8000/api/v1/transactions \\
+  -H "Authorization: Bearer eyJ..."
+```
+
+## Rate Limiting
+
+Authentication endpoints are rate-limited to prevent brute force attacks:
+- Login: 5 requests per minute per IP
+- Registration: 10 requests per hour per IP
+
+## Security
+
+- All passwords are hashed using bcrypt
+- Sensitive data (Plaid credentials) encrypted at rest using Fernet
+- Security headers (HSTS, CSP, etc.) enabled
+- Input validation and sanitization on all endpoints
+- Row-level security for multi-user data isolation
+
+## Monitoring
+
+- Prometheus metrics: `/metrics`
+- Health checks: `/health/live`, `/health/ready`
+- Optional error tracking with Sentry/GlitchTip
+
+## API Versioning
+
+Current version: v1 (prefix: `/api/v1`)
+
+All endpoints are versioned to ensure backward compatibility.
+    """,
     version="0.1.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
+    contact={
+        "name": "MintBean",
+        "url": "https://github.com/your-org/mintbean",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    servers=[
+        {"url": "http://localhost:8000", "description": "Development server"},
+        {"url": "https://api.mintbean.example.com", "description": "Production server"},
+    ],
 )
 
 # Add rate limiter state and error handler
@@ -105,25 +177,97 @@ app.mount("/metrics", metrics_app)
 app.include_router(api_router, prefix="/api/v1")
 
 
-@app.get("/health/live")
-async def liveness_check() -> dict:
-    """
-    Liveness probe - checks if the application is running.
+@app.get(
+    "/health/live",
+    summary="Liveness probe",
+    description="""
+    Lightweight health check that verifies the application is running.
 
-    This is a lightweight check that doesn't verify dependencies.
-    Used by Kubernetes/orchestrators to know if the pod should be restarted.
-    """
+    **Use Case**: Kubernetes liveness probe, container orchestration
+
+    **When to use**:
+    - Container/pod liveness checks
+    - Simple uptime monitoring
+    - Load balancer health checks (basic)
+
+    **Response**:
+    - Always returns 200 OK if the application is running
+    - Does NOT verify dependencies (database, etc.)
+    """,
+    tags=["Health"],
+    responses={
+        200: {
+            "description": "Application is alive",
+            "content": {"application/json": {"example": {"status": "alive", "version": "0.1.0"}}},
+        }
+    },
+)
+async def liveness_check() -> dict:
+    """Liveness probe - checks if the application is running."""
     return {"status": "alive", "version": "0.1.0"}
 
 
-@app.get("/health/ready")
-async def readiness_check() -> dict:
-    """
-    Readiness probe - checks if the application is ready to serve traffic.
+@app.get(
+    "/health/ready",
+    summary="Readiness probe",
+    description="""
+    Comprehensive health check that verifies the application is ready to serve traffic.
 
-    Verifies database connectivity and other critical dependencies.
-    Used by load balancers to know if traffic should be routed to this instance.
-    """
+    **Use Case**: Kubernetes readiness probe, load balancer health checks
+
+    **Checks performed**:
+    - Database connectivity (PostgreSQL/SQLite)
+    - Encryption key configuration
+
+    **When to use**:
+    - Load balancer health checks (comprehensive)
+    - Kubernetes readiness probes
+    - Deployment verification
+    - Pre-production smoke tests
+
+    **Response**:
+    - 200 OK: All checks passed, ready to serve traffic
+    - 503 Service Unavailable: One or more checks failed
+    """,
+    tags=["Health"],
+    responses={
+        200: {
+            "description": "Application is ready",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "ready",
+                        "version": "0.1.0",
+                        "checks": {
+                            "database": {"status": "healthy", "message": "Connected"},
+                            "encryption": {"status": "healthy", "message": "Key configured"},
+                        },
+                    }
+                }
+            },
+        },
+        503: {
+            "description": "Application is not ready",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "not_ready",
+                        "version": "0.1.0",
+                        "checks": {
+                            "database": {"status": "unhealthy", "message": "Connection failed"},
+                            "encryption": {
+                                "status": "unhealthy",
+                                "message": "ENCRYPTION_KEY not set",
+                            },
+                        },
+                    }
+                }
+            },
+        },
+    },
+)
+async def readiness_check() -> dict:
+    """Readiness probe - checks if the application is ready to serve traffic."""
     from sqlalchemy import text
 
     from app.core.database import SessionLocal
