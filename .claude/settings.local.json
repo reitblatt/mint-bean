@@ -57,7 +57,20 @@
       "Bash(npx tsc:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImV4cCI6MTc2NTk5NzQxMn0.hxKZQH-VZQKwNHvLppv_uL9AkMBMRxr4UwtzPb_Zx0M\" curl -s -X GET http://localhost:8000/api/v1/transactions?limit=10 -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImV4cCI6MTc2NTk5NzQxMn0.hxKZQH-VZQKwNHvLppv_uL9AkMBMRxr4UwtzPb_Zx0M\")",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "Bash(wc:*)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(do echo \"Request $i:\")",
+      "Bash(do curl -s -X POST http://localhost:8000/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"test@example.com\"\",\"\"password\"\":\"\"wrongpassword\"\"}')",
+      "Bash(if ! grep -q \"ENCRYPTION_KEY=\" /Users/reitblatt/Dropbox/Projects/mint-bean/.env)",
+      "Bash(then echo \"\")",
+      "Bash(else echo \"ENCRYPTION_KEY already exists in .env\")",
+      "Bash(docker network:*)",
+      "Bash(do curl -s http://localhost:8000/)",
+      "Bash(DB_HOST=localhost DB_PORT=5433 DB_NAME=mintbean DB_USER=mintbean_user POSTGRES_PASSWORD=mintbean_dev_password /Users/reitblatt/Dropbox/Projects/mint-bean/backend/scripts/backup.sh:*)"
     ]
   }
 }

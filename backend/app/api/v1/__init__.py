@@ -16,12 +16,14 @@ from app.api.v1 import (
     plaid_category_mappings,
     rules,
     settings,
+    setup,
     transactions,
 )
 
 api_router = APIRouter()
 
 api_router.include_router(onboarding.router, prefix="/onboarding", tags=["onboarding"])
+api_router.include_router(setup.router, prefix="/setup", tags=["setup"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])

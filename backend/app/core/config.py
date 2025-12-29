@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./data/mintbean.db"
 
+    # Encryption (for sensitive data like Plaid access tokens)
+    ENCRYPTION_KEY: str = ""
+
     # Beancount
     BEANCOUNT_FILE_PATH: str = ""
     BEANCOUNT_REPO_PATH: str = ""

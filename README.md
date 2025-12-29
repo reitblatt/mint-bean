@@ -61,7 +61,22 @@ mint-bean/
 
 ## Getting Started
 
-### Prerequisites
+### Quick Start: AWS Deployment (Recommended for Production)
+
+For a turn-key production deployment on AWS with interactive setup wizard:
+
+1. **Follow the AWS deployment guide**: See [DEPLOYMENT_AWS.md](./DEPLOYMENT_AWS.md)
+2. **One-time setup**: The guide walks you through creating AWS resources (RDS, ECS, ALB, etc.)
+3. **Interactive configuration**: When you first access the application, a setup wizard guides you through:
+   - Database connection verification
+   - Encryption key generation
+   - Admin account creation
+   - Plaid credentials configuration
+
+**Estimated time**: 30-45 minutes
+**Monthly cost**: ~$67-76 (can be reduced to $22-55 with AWS Lightsail)
+
+### Prerequisites (For Local Development)
 
 - Python 3.11+
 - Node.js 20+
