@@ -43,4 +43,5 @@ slowapi==0.1.9
 
 # Monitoring & Observability
 prometheus-client==0.19.0
+sentry-sdk[fastapi]==2.48.0  # Error tracking (works with GlitchTip or Sentry)
 cryptography==41.0.7  # For encryption of secrets

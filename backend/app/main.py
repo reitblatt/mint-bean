@@ -12,6 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.error_tracking import init_error_tracking
 from app.core.limiter import limiter
 from app.core.metrics import (
     http_request_duration_seconds,
@@ -22,6 +23,9 @@ from app.core.startup import run_startup_checks
 
 # Run startup validation checks
 run_startup_checks()
+
+# Initialize error tracking (optional, only if SENTRY_DSN is set)
+init_error_tracking()
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
