@@ -10,6 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+# Set encryption key for testing (before importing models)
+# This is a test-only key - never use in production!
+os.environ.setdefault("ENCRYPTION_KEY", "test-key-DO-NOT-USE-IN-PRODUCTION-" + "=" * 20)
+
 from app.core.database import Base, get_db
 from app.main import app
 from app.models.account import Account
