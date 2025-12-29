@@ -1,17 +1,61 @@
 """Main FastAPI application entry point."""
 
-from fastapi import FastAPI
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import make_asgi_app
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.limiter import limiter
+from app.core.metrics import (
+    http_request_duration_seconds,
+    http_requests_in_progress,
+    http_requests_total,
+)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+
+class MetricsMiddleware(BaseHTTPMiddleware):
+    """Middleware to collect HTTP metrics for Prometheus."""
+
+    async def dispatch(self, request: Request, call_next):
+        """Track request metrics."""
+        # Skip metrics for /metrics endpoint to avoid recursion
+        if request.url.path == "/metrics":
+            return await call_next(request)
+
+        method = request.method
+        path = request.url.path
+
+        # Track in-progress requests
+        http_requests_in_progress.labels(method=method, endpoint=path).inc()
+
+        # Track request duration
+        start_time = time.time()
+        try:
+            response = await call_next(request)
+            status = response.status_code
+        except Exception as e:
+            status = 500
+            raise e
+        finally:
+            duration = time.time() - start_time
+
+            # Record metrics
+            http_requests_total.labels(method=method, endpoint=path, status=status).inc()
+            http_request_duration_seconds.labels(method=method, endpoint=path).observe(duration)
+            http_requests_in_progress.labels(method=method, endpoint=path).dec()
+
+        return response
+
 
 app = FastAPI(
     title="MintBean API",
@@ -26,6 +70,9 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Configure metrics middleware (before CORS so we track all requests)
+app.add_middleware(MetricsMiddleware)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -34,6 +81,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount Prometheus metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 # Include API router
 app.include_router(api_router, prefix="/api/v1")

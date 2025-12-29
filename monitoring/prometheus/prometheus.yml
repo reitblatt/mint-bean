@@ -1,0 +1,47 @@
+# Prometheus configuration for MintBean monitoring
+
+global:
+  scrape_interval: 15s  # Scrape targets every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: 'mintbean'
+    environment: 'production'
+
+# Alertmanager configuration (optional - for production)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # MintBean Backend
+  - job_name: 'mintbean-backend'
+    metrics_path: '/metrics/'
+    static_configs:
+      - targets: ['backend:8000']
+    metric_relabel_configs:
+      # Drop unnecessary high-cardinality labels if needed
+      - source_labels: [__name__]
+        regex: 'python_gc_.*'
+        action: drop
+
+  # PostgreSQL (optional - requires postgres_exporter)
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Node exporter for system metrics (optional)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
