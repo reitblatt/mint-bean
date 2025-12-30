@@ -29,8 +29,10 @@ run_startup_checks()
 # Initialize error tracking (optional, only if SENTRY_DSN is set)
 init_error_tracking()
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables if they don't exist (for SQLite/development)
+# For production with PostgreSQL, use Alembic migrations instead
+# checkfirst=True prevents errors when tables already exist
+Base.metadata.create_all(bind=engine, checkfirst=True)
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
