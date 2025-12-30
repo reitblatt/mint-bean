@@ -12,9 +12,9 @@ export default function Onboarding() {
   const [adminConfirmPassword, setAdminConfirmPassword] = useState('')
 
   // Database fields
-  const [databaseType, setDatabaseType] = useState<'sqlite' | 'mysql'>('sqlite')
+  const [databaseType, setDatabaseType] = useState<'sqlite' | 'postgresql' | 'mysql'>('sqlite')
   const [databaseHost, setDatabaseHost] = useState('localhost')
-  const [databasePort, setDatabasePort] = useState('3306')
+  const [databasePort, setDatabasePort] = useState('5432')
   const [databaseName, setDatabaseName] = useState('mintbean')
   const [databaseUser, setDatabaseUser] = useState('')
   const [databasePassword, setDatabasePassword] = useState('')
@@ -67,10 +67,10 @@ export default function Onboarding() {
     e.preventDefault()
     setError(null)
 
-    // Validation for MySQL
-    if (databaseType === 'mysql') {
+    // Validation for PostgreSQL/MySQL
+    if (databaseType === 'postgresql' || databaseType === 'mysql') {
       if (!databaseHost || !databaseName || !databaseUser || !databasePassword) {
-        setError('All MySQL fields are required')
+        setError(`All ${databaseType === 'postgresql' ? 'PostgreSQL' : 'MySQL'} fields are required`)
         return
       }
     }
@@ -89,15 +89,16 @@ export default function Onboarding() {
     }
 
     // Submit onboarding
+    const isDbServer = databaseType === 'postgresql' || databaseType === 'mysql'
     onboardingMutation.mutate({
       admin_email: adminEmail,
       admin_password: adminPassword,
       database_type: databaseType,
-      database_host: databaseType === 'mysql' ? databaseHost : undefined,
-      database_port: databaseType === 'mysql' ? parseInt(databasePort) : 3306,
-      database_name: databaseType === 'mysql' ? databaseName : undefined,
-      database_user: databaseType === 'mysql' ? databaseUser : undefined,
-      database_password: databaseType === 'mysql' ? databasePassword : undefined,
+      database_host: isDbServer ? databaseHost : undefined,
+      database_port: isDbServer ? parseInt(databasePort) : undefined,
+      database_name: isDbServer ? databaseName : undefined,
+      database_user: isDbServer ? databaseUser : undefined,
+      database_password: isDbServer ? databasePassword : undefined,
       sqlite_path: databaseType === 'sqlite' ? sqlitePath : './data/mintbean.db',
       plaid_client_id: plaidClientId,
       plaid_secret: plaidSecret,
@@ -213,7 +214,21 @@ export default function Onboarding() {
                       onChange={() => setDatabaseType('sqlite')}
                       className="mr-2"
                     />
-                    <span className="text-sm">SQLite (Recommended)</span>
+                    <span className="text-sm">SQLite</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="database_type"
+                      value="postgresql"
+                      checked={databaseType === 'postgresql'}
+                      onChange={() => {
+                        setDatabaseType('postgresql')
+                        setDatabasePort('5432')
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">PostgreSQL</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -221,14 +236,17 @@ export default function Onboarding() {
                       name="database_type"
                       value="mysql"
                       checked={databaseType === 'mysql'}
-                      onChange={() => setDatabaseType('mysql')}
+                      onChange={() => {
+                        setDatabaseType('mysql')
+                        setDatabasePort('3306')
+                      }}
                       className="mr-2"
                     />
                     <span className="text-sm">MySQL</span>
                   </label>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  SQLite is perfect for single-user setups. Choose MySQL for multi-user deployments.
+                  SQLite for development. PostgreSQL recommended for production (AWS RDS, etc.).
                 </p>
               </div>
 
@@ -252,28 +270,33 @@ export default function Onboarding() {
                 <>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      MySQL Host
+                      Database Host
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={databaseHost}
                       onChange={(e) => setDatabaseHost(e.target.value)}
-                      placeholder="localhost"
+                      placeholder={databaseType === 'postgresql' ? 'postgres' : 'localhost'}
                       required
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {databaseType === 'postgresql'
+                        ? 'For docker-compose: postgres. For AWS RDS: your-db.xxxxx.rds.amazonaws.com'
+                        : 'Hostname or IP address of your MySQL server'}
+                    </p>
                   </div>
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      MySQL Port
+                      Database Port
                     </label>
                     <input
                       type="number"
                       className="input"
                       value={databasePort}
                       onChange={(e) => setDatabasePort(e.target.value)}
-                      placeholder="3306"
+                      placeholder={databaseType === 'postgresql' ? '5432' : '3306'}
                       required
                     />
                   </div>
@@ -294,7 +317,7 @@ export default function Onboarding() {
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      MySQL Username
+                      Database Username
                     </label>
                     <input
                       type="text"
@@ -308,14 +331,14 @@ export default function Onboarding() {
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      MySQL Password
+                      Database Password
                     </label>
                     <input
                       type="password"
                       className="input"
                       value={databasePassword}
                       onChange={(e) => setDatabasePassword(e.target.value)}
-                      placeholder="Your MySQL password"
+                      placeholder="Your database password"
                       required
                     />
                   </div>
