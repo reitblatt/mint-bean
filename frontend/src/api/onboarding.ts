@@ -7,7 +7,7 @@ export interface OnboardingStatus {
 export interface OnboardingRequest {
   admin_email: string
   admin_password: string
-  database_type: 'sqlite' | 'mysql'
+  database_type: 'sqlite' | 'postgresql' | 'mysql'
   database_host?: string
   database_port?: number
   database_name?: string
