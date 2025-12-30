@@ -65,12 +65,23 @@ class UserIdFilterChecker(ast.NodeVisitor):
 
     def _has_user_id_filter(self, node: ast.Call) -> bool:
         """
-        Check if the query chain includes a user_id filter.
+        Check if the query chain includes a user_id filter or noqa comment.
 
         This is a heuristic check that looks for:
         - .filter(Model.user_id == ...)
         - .filter_by(user_id=...)
+        - # noqa: user-isolation comment
         """
+        # Check if the line has a noqa comment
+        try:
+            source_lines = self._source.splitlines()
+            if node.lineno <= len(source_lines):
+                line = source_lines[node.lineno - 1]
+                if "# noqa: user-isolation" in line:
+                    return True
+        except Exception:
+            pass
+
         # Get the source code line to do a simple string check
         # This is not perfect but catches most cases
         try:

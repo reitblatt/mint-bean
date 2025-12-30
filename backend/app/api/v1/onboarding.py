@@ -29,12 +29,16 @@ class OnboardingRequest(BaseModel):
     admin_password: str = Field(..., min_length=8, description="Admin user password")
 
     # Database configuration
-    database_type: str = Field("sqlite", description="Database type (sqlite or mysql)")
-    database_host: str | None = Field(None, description="MySQL host (MySQL only)")
-    database_port: int = Field(3306, description="MySQL port (MySQL only)")
-    database_name: str | None = Field(None, description="MySQL database name (MySQL only)")
-    database_user: str | None = Field(None, description="MySQL username (MySQL only)")
-    database_password: str | None = Field(None, description="MySQL password (MySQL only)")
+    database_type: str = Field("sqlite", description="Database type (sqlite, postgresql, or mysql)")
+    database_host: str | None = Field(None, description="Database host (PostgreSQL/MySQL only)")
+    database_port: int | None = Field(
+        None, description="Database port (PostgreSQL: 5432, MySQL: 3306)"
+    )
+    database_name: str | None = Field(None, description="Database name (PostgreSQL/MySQL only)")
+    database_user: str | None = Field(None, description="Database username (PostgreSQL/MySQL only)")
+    database_password: str | None = Field(
+        None, description="Database password (PostgreSQL/MySQL only)"
+    )
     sqlite_path: str = Field("./data/mintbean.db", description="SQLite file path (SQLite only)")
 
     # Plaid configuration
@@ -52,7 +56,7 @@ def check_onboarding_status(db: Session = Depends(get_db)) -> OnboardingStatusRe
 
     Returns true if no users exist in the database.
     """
-    user_count = db.query(User).count()
+    user_count = db.query(User).count()  # noqa: user-isolation
     return OnboardingStatusResponse(needs_onboarding=user_count == 0)
 
 
@@ -76,7 +80,7 @@ def complete_onboarding(
         HTTPException: If rate limit exceeded or onboarding fails
     """
     # Check if onboarding is still needed
-    user_count = db.query(User).count()
+    user_count = db.query(User).count()  # noqa: user-isolation
     if user_count > 0:
         raise HTTPException(
             status_code=400,
@@ -84,14 +88,14 @@ def complete_onboarding(
         )
 
     # Validate database type
-    if request.database_type not in ["sqlite", "mysql"]:
+    if request.database_type not in ["sqlite", "postgresql", "mysql"]:
         raise HTTPException(
             status_code=400,
-            detail="Invalid database type. Must be sqlite or mysql.",
+            detail="Invalid database type. Must be sqlite, postgresql, or mysql.",
         )
 
-    # Validate MySQL configuration if MySQL is selected
-    if request.database_type == "mysql":
+    # Validate PostgreSQL/MySQL configuration if selected
+    if request.database_type in ["postgresql", "mysql"]:
         if not all(
             [
                 request.database_host,
@@ -102,8 +106,12 @@ def complete_onboarding(
         ):
             raise HTTPException(
                 status_code=400,
-                detail="MySQL configuration requires host, name, user, and password.",
+                detail=f"{request.database_type.title()} configuration requires host, name, user, and password.",
             )
+
+        # Set default ports if not provided
+        if request.database_port is None:
+            request.database_port = 5432 if request.database_type == "postgresql" else 3306
 
     # Validate Plaid environment
     if request.plaid_environment not in ["sandbox", "development", "production"]:
@@ -127,13 +135,13 @@ def complete_onboarding(
 
         # Database configuration
         settings.database_type = request.database_type
-        if request.database_type == "mysql":
+        if request.database_type in ["postgresql", "mysql"]:
             settings.database_host = request.database_host
             settings.database_port = request.database_port
             settings.database_name = request.database_name
             settings.database_user = request.database_user
             settings.database_password = request.database_password
-        else:
+        else:  # sqlite
             settings.sqlite_path = request.sqlite_path
 
         # Plaid configuration
